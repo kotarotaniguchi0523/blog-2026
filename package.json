@@ -1,0 +1,31 @@
+{
+  "name": "blog-2026",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "node node_modules/fumapress/cli.js dev",
+    "build": "node node_modules/fumapress/cli.js build",
+    "start": "node node_modules/fumapress/cli.js start",
+    "types:check": "node node_modules/typescript/bin/tsc --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.8.0",
+    "fumadocs-core": "^16.16.2",
+    "fumadocs-mdx": "^15.4.6",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@^16.16.2",
+    "fumapress": "1.6.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
+  }
+}
