@@ -1,7 +1,7 @@
 {
   "$schema": "https://context7.com/schema/docs7.json",
   "theme": "mint",
-  "name": "blog-2026",
+  "name": "Merino Dev",
   "colors": {
     "primary": "#2563EB",
     "light": "#2563EB",
@@ -10,7 +10,7 @@
   "appearance": { "default": "system" },
   "navigation": {
     "groups": [
-      { "group": "ブログ", "pages": ["index", "compatibility"] }
+      { "group": "このサイト", "pages": ["index", "compatibility"] }
     ]
   }
 }

@@ -88,14 +88,24 @@ Fumapress だけのコンポーネントを記事に使うと、Docs7 で表示�
 
 ## GitHub と Docs7 の公開設定
 
-ローカル CLI は現在未ログイン。Docs7 のサイト作成・GitHub 接続・公開は未実施。
-このコードを GitHub に反映した後、Context7 の対象 teamspace の Docs7 で指定する値:
+2026-10-29 に Linux の Docs7 CLI から Personal teamspace にログインし、本番公開を完了した。
+
+- 公開 URL: https://merino-dev.docs7.io （初回公開後に slug を `merino-dev` へ変更）
+- 公開対象: `content/` の3ファイル（設定と2ページ）
+- `whoami` がログイン済み、CLI が `Your site is live`、管理画面が `Succeeded` になったことを確認。
+- 公開サイトの `/` と `/compatibility` の本文をブラウザーで確認。
+
+同日、Context7 GitHub App を対象リポジトリ1件に限定してインストールし、既存サイトに接続した。
+自動デプロイの設定値:
 
 - Repository: `kotarotaniguchi0523/blog-2026`
 - Production branch: `main`
 - Documentation directory: **`content`**（リポジトリのルートではない）
 
 Docs7 の GitHub 連携が push 時の production build と PR preview を担当する。
+接続時に GitHub の `main` のコミット `a516cbd` を取得した初回ビルドが成功し、
+管理画面が `Live`、ログが `Your site is live at https://blog-2026.docs7.io` になったことを確認した。
+接続後の実 push と PR 作成による検証はまだ行っていない。
 この連携のために Fumapress のビルドや任意の React サーバーを Docs7 に登録しない。
 ソースの push と、Docs7 の GitHub App 登録・サイト連携は別の操作となる。
 
@@ -106,6 +116,15 @@ pnpm docs7:login
 pnpm docs7:whoami
 pnpm docs7:preview
 ```
+
+GitHub 接続後の本番更新は `main` へ push して行う。CLI アップロードは拒否されることを確認した:
+
+```sh
+This site now deploys from GitHub. Push to the connected repository to deploy it.
+```
+
+初回の CLI 公開では `--slug blog-2026` を指定し、GitHub 接続後に管理画面で `merino-dev` へ変更した。
+認証情報は Linux ホームの `~/.config/docs7/credentials.json` に保存され、リポジトリには含めない。
 
 `docs7:preview` は外部にサイトを作る操作。ローカルの動作確認では実行しない。
 `.docs7/project.json` は CLI がサイトを作成・リンクしたときの記録であり、
@@ -118,11 +137,11 @@ GitHub 連携の設定を代替しない。必要なローカル記録を CLI �
 - 実際の Docs7 0.1.61 と Fumapress 1.6.2 を起動し、`/` と `/compatibility` の HTTP 応答を確認。
   共通コンテンツと両方のタブ名が HTML にあることを確認。ブラウザー操作・見た目の一致は未検証。
 - Fumapress ビルドには既存の `::highlight` CSS 警告と `site.baseUrl` 未設定警告がある。
-  公開 URL は未決定なので仮の URL を設定していない。
+  Docs7 の公開 URL は上記のとおり。Fumapress の `site.baseUrl` は別途未設定。
 - 2026-10-29 に開発環境を Linux SBX (Node 22.23.3) へ切り替えた。
   `corepack pnpm install --force --frozen-lockfile` で Linux 用依存を再配置し、
   退避された旧 Windows 依存を削除。Linux で16テスト・型チェック・Knip・ビルドが成功。
-  リモート Docs7 デプロイは未検証。
+  その後 CLI によるリモート本番デプロイと公開2ページの本文を確認。
 - Docs7 の source repository (`upstash/docs7`) は確認時の公開 API で404だった。
   公開ドキュメント・スキーマ・npm 配布済み CLI・実行したレンダラーで確認した。
 

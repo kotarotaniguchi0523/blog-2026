@@ -89,4 +89,4 @@ Scrap の公開処理・UI はまだ未実装です。
 ## ロードマップ
 
 - **Scrap 機能**: Zenn の「Scrap」のようなスレッド機能(GitHub Issue + コメントを時系列スレッドとして表示)。詳細は [AGENTS.md](./AGENTS.md) を参照。**未実装**。
-- **Docs7 デプロイ**: 独自プラグインとローカルプレビューを設定済み。Docs7 のサイト作成・GitHub 接続・公開は未実施。
+- **Docs7 デプロイ**: https://merino-dev.docs7.io で本番公開。GitHub App を `blog-2026` に接続し、`main`・`content` からの自動デプロイを設定済み。
