@@ -1,0 +1,16 @@
+{
+  "$schema": "https://context7.com/schema/docs7.json",
+  "theme": "mint",
+  "name": "blog-2026",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#2563EB",
+    "dark": "#60A5FA"
+  },
+  "appearance": { "default": "system" },
+  "navigation": {
+    "groups": [
+      { "group": "ブログ", "pages": ["index", "compatibility"] }
+    ]
+  }
+}

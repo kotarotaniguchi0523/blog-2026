@@ -1,0 +1,4 @@
+nodeLinker: hoisted
+preferSymlinkedExecutables: false
+allowBuilds:
+  esbuild@0.28.2: true

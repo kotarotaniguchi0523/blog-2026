@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  // Fumapress loads press.config.tsx and src/app.css through virtual modules.
+  // All other application modules must be reachable from these or from tests.
+  "entry": [
+    "press.config.tsx",
+    "src/app.css",
+    "tests/**/*.test.ts"
+  ]
+}

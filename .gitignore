@@ -6,3 +6,6 @@
 dist
 .source
 src/pages.gen.ts
+
+# Docs7 keeps local site-link metadata here. Never upload it as content.
+/content/.docs7/

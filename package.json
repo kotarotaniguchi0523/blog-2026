@@ -1,22 +1,31 @@
 {
   "name": "blog-2026",
   "private": true,
+  "packageManager": "pnpm@12.15.0",
   "type": "module",
   "sideEffects": false,
   "scripts": {
+    "knip": "node node_modules/knip/bin/knip.js",
+    "test": "node --test tests/github/*.test.ts tests/docs7/*.test.ts",
+    "docs7:dev": "node --env-file=docs7.env node_modules/@upstash/docs7/bin/docs7.mjs dev content --port 3333",
+    "docs7:whoami": "node node_modules/@upstash/docs7/bin/docs7.mjs whoami",
+    "docs7:login": "node node_modules/@upstash/docs7/bin/docs7.mjs login --no-browser",
+    "docs7:preview": "node --env-file=docs7.env node_modules/@upstash/docs7/bin/docs7.mjs deploy content --preview",
     "dev": "node node_modules/fumapress/cli.js dev",
     "build": "node node_modules/fumapress/cli.js build",
     "start": "node node_modules/fumapress/cli.js start",
     "types:check": "node node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
+    "@octokit/core": "7.0.8",
+    "@octokit/plugin-paginate-rest": "16.0.0",
     "fumadocs-core": "^16.16.2",
     "fumadocs-mdx": "^15.4.6",
     "fumadocs-ui": "npm:@fumadocs/base-ui@^16.16.2",
     "fumapress": "1.6.2",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -24,6 +33,9 @@
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@upstash/docs7": "0.1.12",
+    "emulate": "0.12.3",
+    "knip": "6.43.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"

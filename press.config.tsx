@@ -1,5 +1,6 @@
 import { defineConfig } from "fumapress";
-import { fumadocsMdx } from "fumapress/adapters/mdx";
+import { docs7Plugin } from "./src/plugins/docs7/plugin";
+import { docs7Mdx } from "./src/plugins/docs7/adapter";
 import { metaSchema, pageSchema } from "fumapress/adapters/mdx/schema";
 import { defineDocs } from "fumadocs-mdx/macro";
 
@@ -21,7 +22,7 @@ const docs = defineDocs({
 export default defineConfig({
   content: docs.toFumadocsSource(),
   site: {
-    name: "blog-2026",
+    // The site name is read from content/docs.json by docs7Plugin().
     // the URL where your site is deployed, needed for SEO features like sitemap:
     // baseUrl: "https://example.com",
   },
@@ -40,4 +41,5 @@ export default defineConfig({
     },
   },
 })
-  .adapters(fumadocsMdx());
+  .plugins(docs7Plugin())
+  .adapters(docs7Mdx());

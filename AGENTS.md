@@ -6,11 +6,11 @@
 
 - **フレームワーク**: [Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)。Vite + React + TypeScript で動作します。
 - **コンテンツ**: リポジトリ内の MDX ファイルを基本とし、将来的には GitHub Issues もコンテンツの入力として取り込む予定です。
-- **ホスティング**: Docs7(Upstash / Context7)を想定しています。Docs7 は Mintlify 互換で、`docs.json` と MDX を読み取り、`npx @upstash/docs7 dev` でポート 3333 上に起動します。デプロイは `main` ブランチから行い、各プルリクエストにはプレビューが作成されます。
+- **ホスティング**: Docs7(Upstash / Context7)を想定しています。Docs7 は Mintlify 互換で、`content/docs.json` と MDX を読み取り、`pnpm docs7:dev` でポート 3333 上に起動します。デプロイは `main` ブランチから行い、各プルリクエストにはプレビューが作成されます。
 
 ### Mintlify / Docs7 連携について
 
-`@fumapress/mintlify` は Fumapress の Mintlify 自動移行パッケージです。Docs7(Mintlify 互換)の `docs.json` + MDX コンテンツを Fumapress に組み込む際はこちらを使います。ただし **API を推測せず、使用前に必ず公開されている型定義やソースを読んで確認してください**(例: `node_modules/@fumapress/mintlify/`、または npm の公開メタデータ)。
+`@fumapress/mintlify` は実装の参考資料として扱い、**Docs7 向けの連携を独自に実装します**。同パッケージの採用を前提にしません。Docs7 と Fumapress の公開仕様、型定義、ソースを確認し、対応できる設定と MDX コンポーネントを明示してください。API や設定キーは推測しないでください。
 
 ## コンテンツ入力
 
@@ -27,11 +27,13 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 - データモデル(正規化後・イメージ):
   ```ts
   interface Scrap {
-    number: number; // GitHub Issue 番号(URL にも使用)
+    id: string; // GitHub Issue の node_id を使用する方針。公開 URL の識別子
+    issueNumber: number; // GitHub API の取得・更新用。公開 URL には使用しない
     title: string;
     body: string;
     author: string; // GitHub ユーザー名
     createdAt: string; // ISO 8601
+    state: "open" | "closed"; // GitHub Issue の状態と同期
     comments: ScrapComment[];
   }
 
@@ -43,13 +45,33 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
   ```
 - ルート:
   - `/scraps` — Scrap 一覧
-  - `/scraps/[number]` — 個別スレッド
+  - `/scraps/[id]` — 個別スレッド
 - UI 要件: 時系列スレッドとして読める表示、オーナー(リポジトリ所有者)とコメント投稿者の区別、相対時刻の表示、GitHub へのリンク。
+- GitHub Issue が Open なら Scrap も Open、Closed なら Closed。再オープンも同期する。開閉状態と公開状態は別に管理し、Close を非公開の意味にしない。
+
+### 公開操作と自動ラベル付け
+
+- 利用者の要件: GitHub 上で公開用リアクションを付けると、非同期でブログへ反映する。
+- GitHub のリアクションに独自の `Post` は追加できないため、既存の 🚀 (`rocket`) を公開操作に割り当てる案とする。
+- GitHub にリアクション追加の Webhook / Actions トリガーはない。リアクションは API で定期取得して検出する。Issue / コメントの編集イベントだけでリアクション変更を検出できるとは扱わない。
+- 公開操作を認めるアカウントを明示的に設定し、それ以外の利用者のリアクションでは公開しない。
+- Issue 本文とコメントのどこに付けたリアクションをどの範囲へ適用するかは、下記の実装案を出発点にする。確定済み要件と混同しない。
+- 自動ラベル付けの案: Scrap 専用 Issue テンプレートで `labels: [scrap]` を指定する。ラベルはリポジトリに事前作成が必要。通常の Issue は一括で Scrap にしない。
+- テンプレート外の既存 Issue も、許可アカウントの公開用リアクションを検出した際に `scrap` ラベルを付けて取り込める設計とする。
+
+### 非同期公開の実装案（未実装）
+
+- Issue 本文の 🚀 をスレッドと本文の公開操作、各コメントの 🚀 をそのコメントの公開操作とする。未承認コメントはブログに含めない。親スレッド未公開時はコメントも公開しない。
+- 定期同期で対象 Issue とリアクションをページネーション付きで取得し、許可アカウントを確認して、公開スナップショットを生成する。
+- 再実行しても重複しないよう Issue / コメントの ID と内容ハッシュを管理する。失敗時は前回の公開データを保持し、次回再試行する。
+- 初期案は GitHub Actions の定期実行（例: 5 分間隔）と手動実行。実行遅延があり、公開までの時間は保証しない。より短い遅延が必要なら別の定期ジョブ基盤を検討する。
+- Issue の closed / reopened、本文・コメントの編集と削除も同期対象。公開後の編集を自動反映するか、再承認を要求するか、リアクション削除で公開を取り下げるかは実装前に決める。
+- 同期結果から Docs7 向けのファイルを生成する方法と、公開環境への更新方法は Docs7 の実際の仕様を確認して決める。Docs7 が任意の React サーバーを実行できるとは仮定しない。
 
 ### 未解決の質問
 
-- Scrap として扱う Issue の絞り込み方法(ラベル?特定の Issue 一覧?)
-- 取得タイミング(ビルド時 / リクエスト時)とキャッシュ方針
+- 公開リアクションの確定、許可アカウント、本文とコメントの公開単位、編集の再承認・公開取り下げの方針
+- 非同期ジョブの実行基盤、許容遅延、公開データの保存場所と Docs7 の更新方法
 - GitHub API のレート制限・認証(トークン)の扱い
 - オーナー判定をどう定義するか(リポジトリ所有者?コメント毎の区分は?)
 - 相対時刻の更新戦略(SSR での初回表示とクライアントでの更新)
@@ -60,10 +82,20 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 
 このディレクトリは Windows のバインドマウント上にあり、**シンボリックリンクを作成できません**。そのため:
 
-- このディレクトリで素の `npm install` を実行しないこと。必ず `npm_config_bin_links=false npm install` を使う。
+- シンボリックリンクを前提とする依存配置を使用しないこと。パッケージマネージャーは以下の指定に従う。
 - npm scripts は `node_modules/.bin` に依存しないこと。CLI は `node` でエントリファイルを直接呼び出す(例: `node node_modules/fumapress/cli.js dev`)。
+
+### パッケージマネージャー
+
+- 利用者の決定により pnpm 12.15.0 を使用する。`package.json` の `packageManager` で固定する。npm / upm で依存を導入しない。
+- SBX の Linux と Windows ホストの実行環境を区別する。リンク制約への対応として `pnpm-workspace.yaml` に `nodeLinker: hoisted` と `preferSymlinkedExecutables: false` を指定する。
+- 正式なロックファイルは `pnpm-lock.yaml`。開発環境・CI の再現インストールは `pnpm install --frozen-lockfile` を使用する。
+- 移行前の `upm.lock` と `package-lock.json` は削除済み。再作成しない。
+- CLI はプロジェクトの依存としてインストールする。npx による実行は禁止し、pnpm scripts から `node` で直接呼び出す。
+- 依存のビルドスクリプトは内容を確認して `allowBuilds` で個別に許可・拒否する。
 
 ### その他
 
 - `git init`、GitHub リポジトリ作成、コミットは親エージェントの担当(このセッションでは行わない)。
 - 未確認のパッケージ・API・設定キーを推測しない。不明なら `node_modules` や公開メタデータを確認する。
+- 不要ファイル・依存・エクスポートは `pnpm knip` で確認する。Fumapress の仮想モジュール経由の入口は `knip.jsonc` に明示し、検出を避けるためにソース全体を entry / ignore にしない。

@@ -1,0 +1,50 @@
+---
+title: Docs7 との共通コンテンツ
+description: 同じ MDX を Fumapress と Docs7 で表示するための確認ページ
+---
+
+このページとトップページは、同じ `content/docs.json` と MDX を両方のレンダラーで読み込みます。
+
+<Note>記事の原本は `content/` に置きます。</Note>
+
+<Tip>ナビゲーションを変えるときは `content/docs.json` を編集します。</Tip>
+
+<Warning>GitHub から取得した未承認の本文やコメントは、そのまま公開しません。</Warning>
+
+<Check>共通のコンポーネントを使って表示できます。</Check>
+
+<Tabs>
+  <Tab title="Fumapress">
+    `pnpm dev` でブログの開発サーバーを起動します。
+  </Tab>
+  <Tab title="Docs7">
+    `pnpm docs7:dev` でポート3333のプレビューを起動します。
+  </Tab>
+</Tabs>
+
+<AccordionGroup>
+  <Accordion title="記事を二つ作る必要はありますか？" defaultOpen>
+    ありません。同じ MDX を読み込みます。
+  </Accordion>
+  <Accordion title="すべての設定とコンポーネントに対応していますか？">
+    いいえ。独自プラグインが対応する範囲は、リポジトリの連携ドキュメントに明記しています。
+  </Accordion>
+</AccordionGroup>
+
+<Steps>
+  <Step title="執筆する">
+    `content/` に MDX を追加します。
+  </Step>
+  <Step title="ナビゲーションに追加する">
+    `content/docs.json` の `navigation.groups` に拡張子なしのパスを追加します。
+  </Step>
+</Steps>
+
+<Columns cols={2}>
+  <Card title="ブログへようこそ" href="/">
+    トップページへ戻ります。
+  </Card>
+  <Card title="Docs7 のドキュメント" href="https://context7.com/docs/docs7/quickstart">
+    Docs7 の起動と公開の手順を確認します。
+  </Card>
+</Columns>

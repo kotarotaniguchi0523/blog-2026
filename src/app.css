@@ -7,3 +7,25 @@
   --font-mono: "JetBrains Mono", monospace;
   --default-font-family: "Geist", sans-serif;
 }
+
+.docs7-accordion {
+  margin-block: 1rem;
+  border: 1px solid var(--color-fd-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.docs7-accordion > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.docs7-columns {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .docs7-columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docs7-columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .docs7-columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
