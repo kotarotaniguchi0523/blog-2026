@@ -88,7 +88,8 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 ### パッケージマネージャー
 
 - 利用者の決定により pnpm 12.15.0 を使用する。`package.json` の `packageManager` で固定する。npm / upm で依存を導入しない。
-- SBX の Linux と Windows ホストの実行環境を区別する。リンク制約への対応として `pnpm-workspace.yaml` に `nodeLinker: hoisted` と `preferSymlinkedExecutables: false` を指定する。
+- コマンドは SBX の Linux シェルで実行する。Windows ホストの Node・pnpm・Git に切り替えない。OS ごとのネイティブ依存があるため、Windows で作成した `node_modules` を使い回さない。
+- リンク制約への対応として `pnpm-workspace.yaml` に `nodeLinker: hoisted` と `preferSymlinkedExecutables: false` を指定する。pnpm が PATH にない場合は `corepack pnpm` で固定版を実行する。
 - 正式なロックファイルは `pnpm-lock.yaml`。開発環境・CI の再現インストールは `pnpm install --frozen-lockfile` を使用する。
 - 移行前の `upm.lock` と `package-lock.json` は削除済み。再作成しない。
 - CLI はプロジェクトの依存としてインストールする。npx による実行は禁止し、pnpm scripts から `node` で直接呼び出す。

@@ -9,11 +9,13 @@
 
 ## セットアップ
 
-SBX の Linux 環境と Windows ホストで利用します。バインドマウント上のリンク制約に対応するため、`pnpm-workspace.yaml` で `hoisted` 配置と実行ファイルのリンク無効化を設定しています。
+コマンドは SBX の Linux シェルで実行します。バインドマウント上のリンク制約に対応するため、`pnpm-workspace.yaml` で `hoisted` 配置と実行ファイルのリンク無効化を設定しています。OS ごとのネイティブ依存があるため、Windows で作成した `node_modules` を使い回さないでください。
 
 ```sh
 pnpm install --frozen-lockfile
 ```
+
+pnpm が PATH にない場合は、`corepack pnpm` を使います（例: `corepack pnpm install --frozen-lockfile`）。Windows 向け依存から切り替える場合は、Linux シェルで `corepack pnpm install --force --frozen-lockfile` を実行します。
 
 依存を追加・更新するときは `pnpm add` / `pnpm update` を使い、`pnpm-lock.yaml` も更新します。scripts は `node_modules/.bin` に依存せず、CLI エントリを `node` で直接呼び出しています。依存のインストール時スクリプトは必要なものを確認して個別に許可します。
 

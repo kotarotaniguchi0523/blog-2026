@@ -119,11 +119,10 @@ GitHub 連携の設定を代替しない。必要なローカル記録を CLI �
   共通コンテンツと両方のタブ名が HTML にあることを確認。ブラウザー操作・見た目の一致は未検証。
 - Fumapress ビルドには既存の `::highlight` CSS 警告と `site.baseUrl` 未設定警告がある。
   公開 URL は未決定なので仮の URL を設定していない。
-- タブ修正後、Windows ホストで16テスト・型チェック・Knip・ビルドが成功。
-  Linux SBX (Node 22.23.3) でも16テストが成功。
-  共有 node_modules に Linux 用 TypeScript バイナリがなく、Linux の型チェックは実行できなかった。
-  Linux シェルには pnpm がなく、再インストール・Knip・ビルドは未検証。
-  リモート Docs7 デプロイも未検証。
+- 2026-10-29 に開発環境を Linux SBX (Node 22.23.3) へ切り替えた。
+  `corepack pnpm install --force --frozen-lockfile` で Linux 用依存を再配置し、
+  退避された旧 Windows 依存を削除。Linux で16テスト・型チェック・Knip・ビルドが成功。
+  リモート Docs7 デプロイは未検証。
 - Docs7 の source repository (`upstash/docs7`) は確認時の公開 API で404だった。
   公開ドキュメント・スキーマ・npm 配布済み CLI・実行したレンダラーで確認した。
 

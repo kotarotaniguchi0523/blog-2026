@@ -61,7 +61,8 @@ pnpm run types:check
 ランダムな空きポート (`port: 0`) とループバックを使う。GitHub への実通信は行わない。
 テストランナーは `node --test` なので `node_modules/.bin` に依存しない。
 TypeScript は Node のネイティブ型除去で実行する。Node 24 を使う場合は型除去対応版が必要。
-Linux SBX では未検証。
+2026-10-29 に Linux SBX (Node 22.23.3、Corepack 経由の pnpm 12.15.0) で依存を入れ直し、
+Docs7 のテストを含む全16テスト・型チェック・Knip・production build の成功を確認した。
 
 この Windows ホストで、9テスト、型チェック、サイトの production build、
 `pnpm install --frozen-lockfile` が成功した。
