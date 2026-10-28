@@ -8,6 +8,10 @@ import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
 import { docs7Components } from '../../src/plugins/docs7/components.ts';
 
 const config = readDocs7Config();
+// Keep multi-page navigation coverage without publishing fixture pages.
+const fixtureConfig = parseDocs7Config({ ...config, navigation: {
+  groups: [{ group: 'Test', pages: ['index', 'compatibility'] }],
+} });
 const pages = [
   { path: 'index.mdx', url: '/', data: { title: 'Home' } },
   { path: 'compatibility.mdx', url: '/compatibility', data: { title: 'Compatibility' } },
@@ -38,7 +42,7 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     for (const path of ['../secret', '/absolute', 'index.mdx', 'a\\b', 'https://example.com']) {
       assert.throws(() => parseDocs7Config({ ...config, navigation: { groups: [{ group: 'Test', pages: [path] }] } }));
     }
-    assert.throws(() => createDocs7PageTree(config, pages.slice(0, 1)), /not found/);
+    assert.throws(() => createDocs7PageTree(fixtureConfig, pages.slice(0, 1)), /not found/);
     assert.throws(() => createDocs7PageTree(parseDocs7Config({ ...config, navigation: {
       groups: [{ group: 'Test', pages: ['index', 'index'] }],
     } }), pages), /Duplicate/);

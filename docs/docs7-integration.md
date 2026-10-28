@@ -12,7 +12,7 @@
 
 - `content/docs.json`: サイト名、色、ナビゲーションなど
 - `content/*.mdx`: 記事
-- `content/compatibility.mdx`: 両レンダラーで確認する共通コンポーネントのページ
+- 公開ページは `content/index.mdx` の自己紹介のみ。確認用ページは削除済み。
 
 Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
@@ -32,7 +32,7 @@ pnpm dev
 pnpm docs7:dev
 ```
 
-Docs7 は `http://localhost:3333`、共通ページは `/compatibility`。
+Docs7 は `http://localhost:3333`、自己紹介ページは `/`。
 CLI はローカル依存 `@upstash/docs7@0.1.12` を `node` から直接呼ぶ。
 `docs7.env` の `DOCS7_RENDERER_VERSION=0.1.61` でプレビューのレンダラーを固定した。
 初回は CLI が公式の署名付きレンダラーをダウンロードするため、ネットワーク接続が必要。
@@ -91,9 +91,9 @@ Fumapress だけのコンポーネントを記事に使うと、Docs7 で表示�
 2026-10-29 に Linux の Docs7 CLI から Personal teamspace にログインし、本番公開を完了した。
 
 - 公開 URL: https://merino-dev.docs7.io （初回公開後に slug を `merino-dev` へ変更）
-- 公開対象: `content/` の3ファイル（設定と2ページ）
+- 公開対象: `content/` の2ファイル（設定と自己紹介1ページ）
 - `whoami` がログイン済み、CLI が `Your site is live`、管理画面が `Succeeded` になったことを確認。
-- 公開サイトの `/` と `/compatibility` の本文をブラウザーで確認。
+- 初回公開時は `/` と `/compatibility` を確認。その後、利用者の指定で自己紹介1ページに変更。
 
 同日、Context7 GitHub App を対象リポジトリ1件に限定してインストールし、既存サイトに接続した。
 自動デプロイの設定値:
@@ -105,9 +105,13 @@ Fumapress だけのコンポーネントを記事に使うと、Docs7 で表示�
 Docs7 の GitHub 連携が push 時の production build と PR preview を担当する。
 接続時に GitHub の `main` のコミット `a516cbd` を取得した初回ビルドが成功し、
 管理画面が `Live`、ログが `Your site is live at https://blog-2026.docs7.io` になったことを確認した。
-接続後の実 push と PR 作成による検証はまだ行っていない。
+その後 `42b742a` の push による自動デプロイも `Live` になることを確認。PR プレビューは未検証。
 この連携のために Fumapress のビルドや任意の React サーバーを Docs7 に登録しない。
 ソースの push と、Docs7 の GitHub App 登録・サイト連携は別の操作となる。
+
+Context7 への掲載も Docs7 管理画面から登録済み。公開ライブラリの URL は
+https://context7.com/kotarotaniguchi0523/blog-2026 。初回解析は非同期で行われ、
+以降は本番ビルドの完了に合わせて更新される。
 
 CLI でプレビューを公開する場合は、利用者が認証してから実行する:
 
