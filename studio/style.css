@@ -1,14 +1,10 @@
 /* Editing-only adaptations for Studio's region wrappers. */
-.merino-profile [data-node-view-wrapper],
-.merino-profile .react-renderer,
-.merino-profile [data-fde-hole],
-.merino-profile [data-region="body"],
-.merino-home [data-node-view-wrapper],
-.merino-home .react-renderer,
-.merino-home [data-fde-hole],
-.merino-home [data-region="body"] {
-  display: contents;
+:is(.merino-home, .merino-profile) {
+  & :is([data-node-view-wrapper], .react-renderer, [data-fde-hole], [data-region="body"]) {
+    display: contents;
+  }
+
+  & [data-region="text"] { min-inline-size: 1ch; }
 }
-.merino-profile [data-region="text"],
-.merino-home [data-region="text"] { min-width: 1ch; }
-.merino-profile [data-profile-tag="h2"] { margin: 40px 0 20px; }
+
+.merino-profile [data-profile-tag="h2"] { margin-block: 40px 20px; }

@@ -25,6 +25,9 @@
 
 - 見た目は `content/style.css` の `.merino-home`（トップ）と `.merino-profile`（プロフィール）で完結させる。
   CSS は Docs7 が `content/style.css` を優先して読み、Fumapress は `src/app.css` から同じファイルを import する。
+- CSS は Baseline で広く使える機能だけを使い、プリプロセッサを挟まない（CSS ネスティング、`:is()`、
+  `color-mix()`、論理プロパティ、`margin-block` など）。Docs7 は生の CSS を配信するため、
+  ビルド済みブラウザで解釈できる構文に限る。
 - プロフィールの作品は「ポートフォリオ」と「発表物」に分ける。外部リンクは文章中の埋め込みではなくボタンに置く。
 - 技術スタックは表を使わず、`ul.stack-items` の `li`（アイコン + 名前）を領域ごとに並べる。リンクは埋め込まない。
 - サイト名・言語・ナビゲーション・アイコンは `content/docs.json` に集約する。
