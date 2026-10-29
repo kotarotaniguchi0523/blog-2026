@@ -41,16 +41,6 @@
 .merino-profile > h2 { margin-top: 40px; margin-bottom: 20px; }
 .merino-profile > h2:first-child { margin-top: 0; }
 
-.merino-profile .profile-table-wrap { overflow-x: auto; border: 1px solid var(--profile-border); border-radius: 16px; }
-.merino-profile .profile-stack { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0; }
-.merino-profile .profile-stack td { padding: 12px 16px; text-align: center !important; vertical-align: middle; border: 0; border-top: 1px solid var(--profile-border); }
-.merino-profile .profile-stack td:first-child { width: 32%; }
-.merino-profile .profile-stack tbody tr { height: 72px; }
-.merino-profile .profile-stack tbody tr:hover { background: var(--profile-surface); }
-.merino-profile .profile-stack td a { display: inline-block; max-width: 100%; font-weight: 600; overflow-wrap: anywhere; }
-.merino-profile .profile-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto; border: 1px solid var(--profile-border); border-radius: 12px; background: var(--profile-surface); }
-.merino-profile .profile-icon img { display: block !important; width: 32px !important; height: 32px !important; min-width: 32px; max-width: 32px !important; margin: 0 !important; padding: 0; border: 0; border-radius: 0; object-fit: contain; }
-
 .merino-profile .profile-projects { display: grid; gap: 16px; }
 .merino-profile .profile-project { padding: clamp(20px, 4vw, 28px); border: 1px solid var(--profile-border); border-radius: 16px; background: var(--profile-surface); }
 .merino-profile .profile-project-heading { display: flex; align-items: center; gap: 16px; }
@@ -61,8 +51,3 @@
 .merino-profile a.profile-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--profile-border); border-radius: 10px; background: transparent; color: var(--profile-ink); font-size: 13px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
 .merino-profile a.profile-button:hover { background: color-mix(in srgb, var(--profile-ink) 7%, transparent); border-color: color-mix(in srgb, var(--profile-ink) 30%, transparent); }
 .merino-profile a.profile-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
-
-@media (max-width: 480px) {
-  .merino-profile .profile-stack td { padding: 10px 12px; }
-  .merino-profile .profile-stack td:first-child { width: 30%; }
-}
