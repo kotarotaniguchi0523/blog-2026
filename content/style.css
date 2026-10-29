@@ -1,0 +1,68 @@
+/* Docs7 loads content CSS; Fumapress imports this same file from src/app.css. */
+.merino-profile {
+  --profile-ink: var(--text-primary, var(--color-fd-foreground, #18212f));
+  --profile-muted: var(--text-secondary, var(--color-fd-muted-foreground, #64748b));
+  --profile-border: color-mix(in srgb, var(--profile-ink) 14%, transparent);
+  --profile-surface: color-mix(in srgb, var(--profile-ink) 3%, transparent);
+  color: var(--profile-ink);
+}
+
+.merino-profile .profile-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--profile-border);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgb(37 99 235 / 8%), transparent 75%);
+}
+
+.merino-profile .profile-avatar,
+.merino-profile .profile-project-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: var(--profile-surface);
+  border: 1px solid var(--profile-border);
+  border-radius: 14px;
+  font-family: ui-monospace, monospace;
+}
+
+.merino-profile .profile-avatar { width: 64px; height: 64px; font-size: 36px; line-height: 1; }
+.merino-profile .profile-hero-copy { min-width: 0; }
+.merino-profile .profile-eyebrow { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .14em; line-height: 1.5; color: var(--profile-muted); }
+.merino-profile .profile-name { margin: 0 0 12px; padding: 0; border: 0; font-size: clamp(20px, 4vw, 26px); line-height: 1.5; }
+.merino-profile .profile-description { margin: 0 0 20px; color: var(--profile-muted); line-height: 1.9; }
+.merino-profile > h2 { margin-top: 40px; margin-bottom: 20px; }
+
+.merino-profile .profile-table-wrap { overflow-x: auto; border: 1px solid var(--profile-border); border-radius: 16px; }
+.merino-profile .profile-stack { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0; }
+.merino-profile .profile-stack caption { padding: 14px 16px; text-align: center; font-size: 13px; color: var(--profile-muted); background: var(--profile-surface); }
+.merino-profile .profile-stack :is(th, td) { padding: 12px 16px; text-align: center !important; vertical-align: middle; border: 0; border-top: 1px solid var(--profile-border); }
+.merino-profile .profile-stack th { font-size: 12px; font-weight: 600; color: var(--profile-muted); }
+.merino-profile .profile-stack :is(th, td):first-child { width: 32%; }
+.merino-profile .profile-stack tbody tr { height: 72px; }
+.merino-profile .profile-stack tbody tr:hover { background: var(--profile-surface); }
+.merino-profile .profile-stack td a { display: inline-block; max-width: 100%; font-weight: 600; overflow-wrap: anywhere; }
+.merino-profile .profile-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto; border: 1px solid var(--profile-border); border-radius: 12px; background: var(--profile-surface); }
+.merino-profile .profile-icon img { display: block !important; width: 32px !important; height: 32px !important; min-width: 32px; max-width: 32px !important; margin: 0 !important; padding: 0; border: 0; border-radius: 0; object-fit: contain; }
+
+.merino-profile .profile-projects { display: grid; gap: 16px; }
+.merino-profile .profile-project { padding: clamp(20px, 4vw, 28px); border: 1px solid var(--profile-border); border-radius: 16px; background: var(--profile-surface); }
+.merino-profile .profile-project-heading { display: flex; align-items: center; gap: 16px; }
+.merino-profile .profile-project-number { width: 48px; height: 48px; font-size: 14px; color: var(--profile-muted); }
+.merino-profile .profile-project h3 { margin: 0; padding: 0; border: 0; font-size: 19px; line-height: 1.5; overflow-wrap: anywhere; }
+.merino-profile .profile-project > p { margin: 18px 0 20px; color: var(--profile-muted); line-height: 1.9; }
+.merino-profile .profile-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.merino-profile a.profile-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--profile-border); border-radius: 10px; background: transparent; color: var(--profile-ink); font-size: 13px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
+.merino-profile a.profile-button:hover { background: color-mix(in srgb, var(--profile-ink) 7%, transparent); border-color: color-mix(in srgb, var(--profile-ink) 30%, transparent); }
+.merino-profile a.profile-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
+.merino-profile a.profile-button-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+.merino-profile a.profile-button-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+@media (max-width: 480px) {
+  .merino-profile .profile-hero { flex-direction: column; gap: 16px; }
+  .merino-profile .profile-avatar { width: 56px; height: 56px; font-size: 32px; }
+  .merino-profile .profile-stack :is(th, td) { padding: 10px 12px; }
+  .merino-profile .profile-stack :is(th, td):first-child { width: 30%; }
+}

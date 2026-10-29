@@ -12,11 +12,15 @@
 
 - `content/docs.json`: サイト名、色、ナビゲーションなど
 - `content/*.mdx`: 記事
+- `content/style.css`: 自己紹介の HTML と表・アイコン・作品カードの共通スタイル
 - 公開ページは `content/index.mdx` の自己紹介のみ。確認用ページは削除済み。
 
 Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
 生成ファイルのコピーやシンボリックリンクは使わない。
+Docs7 レンダラー 0.1.61 がコンテンツ内の CSS を収集し、`style.css` を優先して
+読み込むことを配布ソースと開発サーバーで確認した。
+Fumapress は `src/app.css` から同じファイルを import する。
 Docs7 上で Fumapress の React サーバーや GitHub 同期コードを動かす構成ではない。
 
 ## 起動
@@ -91,7 +95,7 @@ Fumapress だけのコンポーネントを記事に使うと、Docs7 で表示�
 2026-10-29 に Linux の Docs7 CLI から Personal teamspace にログインし、本番公開を完了した。
 
 - 公開 URL: https://merino-dev.docs7.io （初回公開後に slug を `merino-dev` へ変更）
-- 公開対象: `content/` の2ファイル（設定と自己紹介1ページ）
+- 公開対象: `content/` の3ファイル（設定、自己紹介1ページ、スタイルシート）
 - `whoami` がログイン済み、CLI が `Your site is live`、管理画面が `Succeeded` になったことを確認。
 - 初回公開時は `/` と `/compatibility` を確認。その後、利用者の指定で自己紹介1ページに変更。
 
@@ -142,6 +146,9 @@ GitHub 連携の設定を代替しない。必要なローカル記録を CLI �
   共通コンテンツと両方のタブ名が HTML にあることを確認。ブラウザー操作・見た目の一致は未検証。
 - Fumapress ビルドには既存の `::highlight` CSS 警告と `site.baseUrl` 未設定警告がある。
   Docs7 の公開 URL は上記のとおり。Fumapress の `site.baseUrl` は別途未設定。
+- 自己紹介の改修では Docs7 開発サーバーをブラウザーで確認。
+  デスクトップ・幅390px・明暗テーマで表示を確認し、8個のアイコンが32×32px、
+  枠が48×48pxで中央に配置され、表の全セルが中央揃えであることを計測した。
 - 2026-10-29 に開発環境を Linux SBX (Node 22.23.3) へ切り替えた。
   `corepack pnpm install --force --frozen-lockfile` で Linux 用依存を再配置し、
   退避された旧 Windows 依存を削除。Linux で16テスト・型チェック・Knip・ビルドが成功。
