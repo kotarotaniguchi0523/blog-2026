@@ -8,6 +8,12 @@
     "dark": "#60A5FA"
   },
   "appearance": { "default": "system" },
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "/blog" },
+      { "label": "Scrap", "href": "/scraps" }
+    ]
+  },
   "navigation": {
     "groups": [
       { "group": "プロフィール", "pages": ["index"] },

@@ -56,7 +56,6 @@
 .merino-profile .profile-project h3 { margin: 0; padding: 0; border: 0; font-size: 19px; line-height: 1.5; overflow-wrap: anywhere; }
 .merino-profile .profile-project > p { margin: 18px 0 20px; color: var(--profile-muted); line-height: 1.9; }
 .merino-profile .profile-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.merino-profile .profile-site-nav { margin-top: 16px; }
 .merino-profile a.profile-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--profile-border); border-radius: 10px; background: transparent; color: var(--profile-ink); font-size: 13px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
 .merino-profile a.profile-button:hover { background: color-mix(in srgb, var(--profile-ink) 7%, transparent); border-color: color-mix(in srgb, var(--profile-ink) 30%, transparent); }
 .merino-profile a.profile-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
