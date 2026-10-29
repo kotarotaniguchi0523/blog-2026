@@ -43,14 +43,19 @@ Docs7 とローカルプレビューで同じ設定を共有する。
 - `vite.ts`: docs.json の変更で開発サーバーを再起動する。
 
 対応する設定: `name` / `theme` / `colors` / `appearance` / `icons.library` / `seo.indexing` /
-`navbar.links` / `navigation.{groups,pages,languages}`。未対応キーは起動時に例外にする。
+`contextual.options` / `navbar.links` / `navigation.{groups,pages,languages}`。
+未対応キーは起動時に例外にする。
 
 Docs7 の挙動として確認済みの制約:
 
-- ページ上部のアクションは「Copy as Markdown」だけで固定。`contextual.options`（`chatgpt` / `claude` /
-  `perplexity` など）はスキーマにはあるが、レンダラー 0.1.61 では `display: header` / `toc` のどちらでも
-  追加のアクションが描画されない（ローカル 0.1.61 と本番の両方で確認）。有効化できないため docs.json には書かない。
-  ヘッダーの「Ask AI」は別機能として使える。
+- `contextual.options`（`copy` / `view` / `chatgpt` / `claude` / `perplexity` など）は Docs7 のスキーマにあり
+  docs.json で受理されるが、レンダラー 0.1.61 は `copy` 以外を描画しない。確認手順:
+  本番ビルドに設定を入れてデプロイ完了を確認（ページ内マーカーで検証）→ hydration 後の DOM に
+  `[role=menu]` / `[aria-haspopup]` / ChatGPT・Claude へのリンクが 0 件。レンダラーのバンドルにも
+  "Open in ChatGPT" 等の文言と `chatgpt.com` / `claude.ai` の URL が存在しない。
+  Mintlify 側の仕様（`contextual.options` で ChatGPT / Claude 等を追加）とはここが一致していない。
+  Docs7 が対応したときのために設定は docs.json に残している（現状は効果なし）。
+
 
 - 言語ごとの `navbar.links` は切り替わらない（グローバル設定のみ反映）。そのため Blog / Scrap は
   ヘッダーではなく言語別のサイドバーに置く。
