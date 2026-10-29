@@ -44,6 +44,11 @@ Docs7 とローカルプレビューで同じ設定を共有する。
 
 Docs7 の挙動として確認済みの制約:
 
+- ページ上部のアクションは「Copy as Markdown」だけで固定。`contextual.options`（`chatgpt` / `claude` /
+  `perplexity` など）はスキーマにはあるが、レンダラー 0.1.61 では `display: header` / `toc` のどちらでも
+  追加のアクションが描画されない（ローカル 0.1.61 と本番の両方で確認）。有効化できないため docs.json には書かない。
+  ヘッダーの「Ask AI」は別機能として使える。
+
 - 言語ごとの `navbar.links` は切り替わらない（グローバル設定のみ反映）。そのため Blog / Scrap は
   ヘッダーではなく言語別のサイドバーに置く。
 - `navigation.languages` の `en` 側ページは `en/index` のように言語ディレクトリ込みで列挙する。
