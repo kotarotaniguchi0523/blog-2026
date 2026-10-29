@@ -10,7 +10,8 @@
   "appearance": { "default": "system" },
   "navigation": {
     "groups": [
-      { "group": "プロフィール", "pages": ["index"] }
+      { "group": "プロフィール", "pages": ["index"] },
+      { "group": "コンテンツ", "pages": ["blog", "scraps"] }
     ]
   }
 }

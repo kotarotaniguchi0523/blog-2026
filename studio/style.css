@@ -1,0 +1,9 @@
+/* Editing-only adaptations for Studio's region wrappers. */
+.merino-profile [data-node-view-wrapper],
+.merino-profile .react-renderer,
+.merino-profile [data-fde-hole],
+.merino-profile [data-region="body"] {
+  display: contents;
+}
+.merino-profile [data-region="text"] { min-width: 1ch; }
+.merino-profile [data-profile-tag="h2"]:not(.profile-name) { margin: 40px 0 20px; }

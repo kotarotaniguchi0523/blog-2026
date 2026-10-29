@@ -5,57 +5,95 @@ description: merino のプロフィール・技術スタック・つくったも
 
 <div className="merino-profile">
   <section className="profile-hero" aria-label="merino のプロフィール">
-    <div className="profile-avatar" aria-hidden="true">m</div>
+    <div className="profile-avatar" aria-hidden="true">
+      m
+    </div>
     <div className="profile-hero-copy">
       <p className="profile-eyebrow">PROFILE</p>
+
       <h2 className="profile-name">こんにちは、merino です</h2>
+
       <p className="profile-description">つくったものや調べたこと、日々の学びを記録していく個人サイトです。</p>
+
       <a className="profile-button profile-button-primary" href="https://github.com/kotarotaniguchi0523">GitHub プロフィール <span aria-hidden="true">↗</span></a>
     </div>
   </section>
+  <nav className="profile-actions profile-site-nav" aria-label="サイト内のページ">
+    <a className="profile-button" href="/blog">Blog <span aria-hidden="true">→</span></a> <a className="profile-button" href="/scraps">Scrap <span aria-hidden="true">→</span></a>
+  </nav>
 
   <h2>技術スタック</h2>
+
   <div className="profile-table-wrap">
     <table className="profile-stack">
-      <caption>使っている技術と公式サイト</caption>
       <thead>
         <tr><th scope="col">アイコン</th><th scope="col">技術</th></tr>
       </thead>
       <tbody>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/nextdotjs/334155/E2E8F0" alt="" width="32" height="32" /></span></td><td><a href="https://nextjs.org/">Next.js</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/react/087EA4/61DAFB" alt="" width="32" height="32" /></span></td><td><a href="https://react.dev/">React</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/tanstack" alt="" width="32" height="32" /></span></td><td><a href="https://tanstack.com/form/latest">TanStack Form</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/fastapi" alt="" width="32" height="32" /></span></td><td><a href="https://fastapi.tiangolo.com/">FastAPI</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/sqlalchemy" alt="" width="32" height="32" /></span></td><td><a href="https://www.sqlalchemy.org/">SQLAlchemy</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/mysql" alt="" width="32" height="32" /></span></td><td><a href="https://www.mysql.com/">MySQL</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/hono" alt="" width="32" height="32" /></span></td><td><a href="https://hono.dev/">Hono</a></td></tr>
-        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/line" alt="" width="32" height="32" /></span></td><td><a href="https://developers.line.biz/ja/docs/messaging-api/">LINE Messaging API</a></td></tr>
+        <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/nextdotjs/334155/E2E8F0" alt="" width="32" height="32" /></span></td><td><a href="https://nextjs.org/">Next.js</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/react/087EA4/61DAFB" alt="" width="32" height="32" /></span></td><td><a href="https://react.dev/">React</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/tanstack" alt="" width="32" height="32" /></span></td><td><a href="https://tanstack.com/form/latest">TanStack Form</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/fastapi" alt="" width="32" height="32" /></span></td><td><a href="https://fastapi.tiangolo.com/">FastAPI</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/sqlalchemy" alt="" width="32" height="32" /></span></td><td><a href="https://www.sqlalchemy.org/">SQLAlchemy</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/mysql" alt="" width="32" height="32" /></span></td><td><a href="https://www.mysql.com/">MySQL</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/hono" alt="" width="32" height="32" /></span></td><td><a href="https://hono.dev/">Hono</a></td></tr> <tr><td><span className="profile-icon"><img src="https://cdn.simpleicons.org/line" alt="" width="32" height="32" /></span></td><td><a href="https://developers.line.biz/ja/docs/messaging-api/">LINE Messaging API</a></td></tr>
       </tbody>
     </table>
   </div>
 
   <h2>つくったもの</h2>
+
   <div className="profile-projects">
     <section className="profile-project" aria-labelledby="project-jobtra">
-      <div className="profile-project-heading"><span className="profile-project-number" aria-hidden="true">01</span><div><p className="profile-eyebrow">EDITOR</p><h3 id="project-jobtra">JobTra-Editor</h3></div></div>
+      <div className="profile-project-heading">
+        <span className="profile-project-number" aria-hidden="true">01</span>
+
+        <div>
+          <p className="profile-eyebrow">EDITOR</p>
+
+          <h3 id="project-jobtra">JobTra-Editor</h3>
+        </div>
+      </div>
+
       <p>就活のエントリーシートの下書き・推敲を支援するエディタ。STAR法での思考整理、文字数チェック、下書きの版管理に対応しています。</p>
-      <nav className="profile-actions" aria-label="JobTra-Editor のリンク"><a className="profile-button" href="https://jobtra-editor.lolipop-now.app/">公開サイト <span aria-hidden="true">↗</span></a><a className="profile-button" href="https://github.com/kotarotaniguchi0523/JobTra-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+
+      <nav className="profile-actions" aria-label="JobTra-Editor のリンク">
+        <a className="profile-button" href="https://jobtra-editor.lolipop-now.app/">公開サイト <span aria-hidden="true">↗</span></a><a className="profile-button" href="https://github.com/kotarotaniguchi0523/JobTra-Editor">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
     </section>
     <section className="profile-project" aria-labelledby="project-fit">
-      <div className="profile-project-heading"><span className="profile-project-number" aria-hidden="true">02</span><div><p className="profile-eyebrow">LEARNING</p><h3 id="project-fit">FIT Redesign</h3></div></div>
+      <div className="profile-project-heading">
+        <span className="profile-project-number" aria-hidden="true">02</span>
+
+        <div>
+          <p className="profile-eyebrow">LEARNING</p>
+
+          <h3 id="project-fit">FIT Redesign</h3>
+        </div>
+      </div>
+
       <p>「基本情報技術 I」の小テストを単元・年度から探し、解答・解説を確認できる学習支援サイト。学習記録の保存や端末間同期にも対応しています。</p>
-      <nav className="profile-actions" aria-label="FIT Redesign のリンク"><a className="profile-button" href="https://fit-redesign.r02takako.workers.dev/">公開サイト <span aria-hidden="true">↗</span></a><a className="profile-button" href="https://github.com/kotarotaniguchi0523/fit-redesign">GitHub <span aria-hidden="true">↗</span></a></nav>
+
+      <nav className="profile-actions" aria-label="FIT Redesign のリンク">
+        <a className="profile-button" href="https://fit-redesign.r02takako.workers.dev/">公開サイト <span aria-hidden="true">↗</span></a><a className="profile-button" href="https://github.com/kotarotaniguchi0523/fit-redesign">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
     </section>
     <section className="profile-project" aria-labelledby="project-presentation">
-      <div className="profile-project-heading"><span className="profile-project-number" aria-hidden="true">03</span><div><p className="profile-eyebrow">PRESENTATION</p><h3 id="project-presentation">presentation-2026</h3></div></div>
+      <div className="profile-project-heading">
+        <span className="profile-project-number" aria-hidden="true">03</span>
+
+        <div>
+          <p className="profile-eyebrow">PRESENTATION</p>
+
+          <h3 id="project-presentation">presentation-2026</h3>
+        </div>
+      </div>
+
       <p>suraido.js と JSX でプレゼンテーション資料を管理するリポジトリ。ブラウザーでの表示と PDF 出力に対応しています。</p>
-      <nav className="profile-actions" aria-label="presentation-2026 のリンク"><a className="profile-button" href="https://github.com/kotarotaniguchi0523/presentation-2026">GitHub <span aria-hidden="true">↗</span></a></nav>
+
+      <nav className="profile-actions" aria-label="presentation-2026 のリンク">
+        <a className="profile-button" href="https://github.com/kotarotaniguchi0523/presentation-2026">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
     </section>
   </div>
 
   <h2>リンク</h2>
+
   <nav className="profile-actions" aria-label="プロフィールのリンク">
-    <a className="profile-button" href="https://github.com/kotarotaniguchi0523">GitHub プロフィール <span aria-hidden="true">↗</span></a>
-    <a className="profile-button" href="https://github.com/kotarotaniguchi0523/blog-2026">このサイトのソースコード <span aria-hidden="true">↗</span></a>
+    <a className="profile-button" href="https://github.com/kotarotaniguchi0523">GitHub プロフィール <span aria-hidden="true">↗</span></a> <a className="profile-button" href="https://github.com/kotarotaniguchi0523/blog-2026">このサイトのソースコード <span aria-hidden="true">↗</span></a>
   </nav>
 </div>

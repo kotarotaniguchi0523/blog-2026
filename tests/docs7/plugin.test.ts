@@ -15,6 +15,8 @@ const fixtureConfig = parseDocs7Config({ ...config, navigation: {
 const pages = [
   { path: 'index.mdx', url: '/', data: { title: 'Home' } },
   { path: 'compatibility.mdx', url: '/compatibility', data: { title: 'Compatibility' } },
+  { path: 'blog.mdx', url: '/blog', data: { title: 'Blog' } },
+  { path: 'scraps.mdx', url: '/scraps', data: { title: 'Scrap' } },
 ];
 
 describe('Docs7 configuration and Fumapress plugin', () => {

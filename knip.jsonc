@@ -4,6 +4,8 @@
   // All other application modules must be reachable from these or from tests.
   "entry": [
     "press.config.tsx",
+    "fumadocs-studio.config.ts",
+    "studio/style.css",
     "src/app.css",
     "tests/**/*.test.ts"
   ]

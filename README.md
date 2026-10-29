@@ -4,7 +4,7 @@
 
 ## 必要なもの
 
-- Node.js 24
+- Node.js 24以上（`.node-version` は動作確認した24.15.0）
 - pnpm 12.15.0（`package.json` で固定）
 
 ## セットアップ
@@ -30,6 +30,49 @@ pnpm run dev
 ```sh
 pnpm run build
 ```
+
+## ローカルのビジュアルエディタ
+
+Fumadocs 公式の Studio 0.2.6 を開発依存として固定しています。Linux の **Node.js 24以上** で起動してください。
+
+```sh
+pnpm editor
+```
+
+`http://127.0.0.1:5180` で `content/` の MDX を編集できます。pnpm が PATH にない場合は
+`corepack pnpm editor` を使用します。npx / pnpm dlx やグローバルインストールは不要です。
+この環境で Node 22 が選ばれる場合は、Linux に導入済みの Node 24 を先に選びます。
+
+```sh
+export PATH="$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH"
+corepack pnpm editor
+```
+
+変更はファイルへ自動保存されます。`Ctrl+S` でも保存できます。MDX タブでソースを直接編集できます。
+自己紹介の本文・見出しは Visual タブで直接入力できます。`studio/profile-components.tsx` が
+HTML の編集領域を定義し、公開時と同じ CSS を読み込みます。アイコン表・リンク・属性は MDX タブで編集してください。
+Studio の編集用表示は公開画面の完全なプレビューではありません。
+公開UIを維持するための画像・寸法・比較手順は [見た目の基準](./docs/ui-baseline/README.md) に保存しています。
+公開時の見た目は、別ターミナルの `pnpm docs7:dev`（ポート3333）で確認してください。
+実験段階のエディタなので、保存後は `git diff -- content/` で変更を確認してください。
+
+設定は `fumadocs-studio.config.ts`。待受先は `127.0.0.1` に限定し、画像アップロードは無効です。
+Studio は別プロセスで起動し、サイトのコード・ビルド・Docs7 の公開対象へ組み込みません。
+編集・保存ではデプロイされません。ただし、既存の GitHub 連携により `main` へ push すると本番更新されます。
+デプロイせずに編集する間は push しないでください。
+
+自己紹介には Blog (`/blog`)・Scrap (`/scraps`) へのボタンがあり、サイドバーからも移動できます。
+どちらも現在は記事・スレッドのない一覧ページです。Scrap の GitHub 同期は未実装です。
+
+導入方法・Node 要件は [公式 Studio ドキュメント](https://editor.fumadocs.dev/studio) を参照。
+
+## リンク切れの検査
+
+`press.config.tsx` で Fumapress 同梱の `linkValidationPlugin()` を有効にしています。
+`pnpm build` の静的レンダリングで収集された Fumapress の `Link` のうち、内部リンクが404ならビルドが失敗します。
+外部URL、ページ内アンカー、直接記述した HTML の `<a>` を網羅的に検査する設定ではありません。
+Docs7 は Fumapress のビルドを実行しないため、この検査はローカルで `pnpm build` を実行して使います。
+追加候補と適用範囲は [プラグイン一覧](./docs/fumapress-plugins.md) を参照してください。
 
 ## Docs7 との連携
 

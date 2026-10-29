@@ -2,6 +2,9 @@
   "name": "blog-2026",
   "private": true,
   "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "sideEffects": false,
   "scripts": {
@@ -12,6 +15,7 @@
     "docs7:login": "node node_modules/@upstash/docs7/bin/docs7.mjs login --no-browser",
     "docs7:preview": "node --env-file=docs7.env node_modules/@upstash/docs7/bin/docs7.mjs deploy content --preview",
     "dev": "node node_modules/fumapress/cli.js dev",
+    "editor": "node node_modules/@fumadocs-editor/studio/dist/cli.js --config fumadocs-studio.config.ts",
     "build": "node node_modules/fumapress/cli.js build",
     "start": "node node_modules/fumapress/cli.js start",
     "types:check": "node node_modules/typescript/bin/tsc --noEmit"
@@ -28,6 +32,8 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@fumadocs-editor/studio": "0.2.6",
+    "@fumadocs-editor/ui": "0.6.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.6.2",

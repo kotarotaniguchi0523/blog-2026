@@ -1,4 +1,5 @@
 import { defineConfig } from "fumapress";
+import { linkValidationPlugin } from "fumapress/plugins/link-validation";
 import { docs7Plugin } from "./src/plugins/docs7/plugin";
 import { docs7Mdx } from "./src/plugins/docs7/adapter";
 import { metaSchema, pageSchema } from "fumapress/adapters/mdx/schema";
@@ -41,5 +42,5 @@ export default defineConfig({
     },
   },
 })
-  .plugins(docs7Plugin())
+  .plugins(docs7Plugin(), linkValidationPlugin())
   .adapters(docs7Mdx());
