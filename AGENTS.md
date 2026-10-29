@@ -155,6 +155,17 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 
 ## 開発ルール
 
+### 作業環境
+
+- **コマンドは Docker Sandboxes の `opencode-blog-2026` で実行する**。ホスト（Windows）からは
+  `sbx exec opencode-blog-2026 -- bash -lc 'cd /c/Users/r02ta/projects/blog-2026 && …'`、
+  サンドボックス内のシェルからは `/c/Users/r02ta/projects/blog-2026` で直接実行する。
+- **WSL の `bash.exe` は使わない。** サンドボックスと WSL は別環境で、正規の環境はサンドボックス。
+- Windows ホストの Node / pnpm でリポジトリのコマンドを実行しない。`node_modules` はサンドボックスの
+  Linux 版（`@esbuild/linux-x64` など）なので、ホストではネイティブバインディングが読み込めない。
+- `sbx policy approval` はホスト側で実行する。Docs7 プレビューの初回は
+  `b3a38d39ac3c.blob.upstash.io`（レンダラー配布）への通信許可が必要。
+
 ### コマンド
 
 | 目的 | コマンド |
