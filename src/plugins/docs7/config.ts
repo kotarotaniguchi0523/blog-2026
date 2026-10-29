@@ -34,6 +34,8 @@ const navbarLink = z.strictObject({
   type: z.enum(['github', 'discord']).optional(),
 });
 
+const pageList = z.array(z.union([pagePath, z.lazy(() => group)])).min(1);
+
 // Intentionally a strict supported subset, not a replacement for Docs7's full schema.
 const configSchema = z.strictObject({
   $schema: z.literal('https://context7.com/schema/docs7.json').optional(),
@@ -46,8 +48,14 @@ const configSchema = z.strictObject({
   }).optional(),
   // Docs7-only icon library setting; Fumapress ships its own icon set.
   icons: z.strictObject({ library: z.enum(['fontawesome', 'lucide', 'tabler']) }).optional(),
+  // Docs7-only indexing scope; Fumapress builds its sitemap from the source pages.
+  seo: z.strictObject({ indexing: z.enum(['navigable', 'all']) }).optional(),
   navbar: z.strictObject({ links: z.array(navbarLink) }).optional(),
-  navigation: z.strictObject({ groups: z.array(group).min(1) }),
+  // `pages` is a flat sidebar; `groups` adds section labels above the entries.
+  navigation: z.union([
+    z.strictObject({ groups: z.array(group).min(1) }),
+    z.strictObject({ pages: pageList }),
+  ]),
 });
 
 export type Docs7Config = z.infer<typeof configSchema>;
@@ -89,7 +97,11 @@ export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[]): R
     if (!page) throw new Error(`[Docs7 plugin] Navigation page not found: ${value}`);
     return { type: 'page', $id: `docs7:${value}`, $ref: page.path, name: page.data.title ?? value, url: page.url };
   }
-  return { name: config.name, children: config.navigation.groups.map((item, i) => entry(item, String(i))) };
+  return { name: config.name, children: navigationItems(config).map((item, i) => entry(item, String(i))) };
+}
+
+function navigationItems(config: Docs7Config): (string | Docs7Group)[] {
+  return 'groups' in config.navigation ? config.navigation.groups : config.navigation.pages;
 }
 
 export function docs7ThemeCss(config: Docs7Config): string {

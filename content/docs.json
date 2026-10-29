@@ -9,6 +9,7 @@
   },
   "appearance": { "default": "system" },
   "icons": { "library": "lucide" },
+  "seo": { "indexing": "all" },
   "navbar": {
     "links": [
       { "label": "Blog", "href": "/blog" },
@@ -16,9 +17,6 @@
     ]
   },
   "navigation": {
-    "groups": [
-      { "group": "Home", "icon": "house", "pages": ["index", "about"] },
-      { "group": "Content", "icon": "newspaper", "pages": ["blog", "scraps"] }
-    ]
+    "pages": ["index", "about"]
   }
 }

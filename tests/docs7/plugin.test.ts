@@ -68,6 +68,13 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     }
   });
 
+  it('accepts a flat page list and treats seo as Docs7-only', () => {
+    const flat = parseDocs7Config({ ...config, seo: { indexing: 'all' }, navigation: { pages: ['index', 'about'] } });
+    assert.deepEqual(createDocs7PageTree(flat, pages).children.map((node) => node.type), ['page', 'page']);
+    assert.throws(() => parseDocs7Config({ ...config, navigation: { pages: [] } }), /unsupported/);
+    assert.throws(() => parseDocs7Config({ ...config, seo: { indexing: 'sometimes' } }), /unsupported/);
+  });
+
   it('adds navbar links once, even when a layout already links the same URL', async () => {
     const context = {
       siteConfig: { name: 'Before' }, data: {},

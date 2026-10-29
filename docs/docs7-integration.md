@@ -65,12 +65,15 @@ Fumapress の開発サーバーは `content/docs.json` の変更で再起動す�
 ナビゲーションは表示順の設定であり、アクセス制御ではない。
 ナビゲーション外の MDX が非公開になるとは扱わない。
 
-タブ・言語・バージョン・productGroups を持つナビゲーション、外部リンクのナビゲーション、
-footer / logo / SEO / redirects / integrations / filterSidebar 等の設定、
-JSON `$ref` 分割は未対応。必要になったら Docs7 の実仕様を確認して追加する。
+ナビゲーションは `groups`（セクション見出し付き）と `pages`（見出しなしの一覧）の両方に対応する。
 
-`navbar.links` は Fumapress のヘッダーリンクに読み替え、`icons.library` とグループの `icon` は
-Docs7 側の表示設定として受け取る（Fumapress のサイドバーは自前のアイコンを出す）。
+タブ・言語・バージョン・productGroups を持つナビゲーション、外部リンクのナビゲーション、
+footer / logo / redirects / integrations / filterSidebar 等の設定、
+`seo.indexing` 以外の SEO 設定、JSON `$ref` 分割は未対応。
+必要になったら Docs7 の実仕様を確認して追加する。
+
+`navbar.links` は Fumapress のヘッダーリンクに読み替え、`icons.library`・グループの `icon`・
+`seo.indexing` は Docs7 側の表示と配信設定として受け取る（Fumapress は自前のアイコンとサイトマップを使う）。
 
 ## 対応する MDX
 
