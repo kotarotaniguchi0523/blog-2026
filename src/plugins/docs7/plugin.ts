@@ -17,11 +17,21 @@ export function docs7Plugin<C extends AppShape = AppShape>(options: Docs7PluginO
         next(), createElement('style', { 'data-docs7-theme': true }, docs7ThemeCss(config)),
       ));
       const previous = this.defaultLayoutProps;
+      const navbarLinks = (config.navbar?.links ?? []).map((link) => ({
+        text: link.label,
+        url: link.href,
+        external: !link.href.startsWith('/'),
+      }));
       this.defaultLayoutProps = async (env) => {
         const inherited = await previous(env);
+        const links = inherited.links ?? [];
+        const linkedUrls = new Set(links.flatMap((item) => ('url' in item && typeof item.url === 'string' ? [item.url] : [])));
         return {
           ...inherited,
           nav: { ...inherited.nav, title: config.name },
+          ...(navbarLinks.length ? {
+            links: [...links, ...navbarLinks.filter((link) => !linkedUrls.has(link.url))],
+          } : {}),
           ...(config.appearance?.strict ? { themeSwitch: { enabled: false } } : {}),
         };
       };

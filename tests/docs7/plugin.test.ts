@@ -14,6 +14,7 @@ const fixtureConfig = parseDocs7Config({ ...config, navigation: {
 } });
 const pages = [
   { path: 'index.mdx', url: '/', data: { title: 'Home' } },
+  { path: 'about.mdx', url: '/about', data: { title: 'Profile' } },
   { path: 'compatibility.mdx', url: '/compatibility', data: { title: 'Compatibility' } },
   { path: 'blog.mdx', url: '/blog', data: { title: 'Blog' } },
   { path: 'scraps.mdx', url: '/scraps', data: { title: 'Scrap' } },
@@ -51,6 +52,40 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.throws(() => parseDocs7Config({ ...config, colors: { primary: 'red;}</style>' } }));
   });
 
+  it('accepts Docs7-only icon and navbar settings and validates their values', () => {
+    const parsed = parseDocs7Config({
+      ...config,
+      icons: { library: 'lucide' },
+      navbar: { links: [{ label: 'Blog', href: '/blog' }, { label: 'GitHub', href: 'https://github.com/kotarotaniguchi0523', type: 'github' }] },
+      navigation: { groups: [{ group: 'Home', icon: 'house', pages: ['index'] }] },
+    });
+    assert.equal(parsed.icons?.library, 'lucide');
+    assert.equal(parsed.navbar?.links[1]?.href, 'https://github.com/kotarotaniguchi0523');
+    assert.equal(createDocs7PageTree(parsed, pages).children[0]?.type, 'folder');
+    assert.throws(() => parseDocs7Config({ ...config, icons: { library: 'feather' } }), /unsupported/);
+    for (const href of ['//evil.example', 'javascript:alert(1)', 'blog']) {
+      assert.throws(() => parseDocs7Config({ ...config, navbar: { links: [{ label: 'Bad', href }] } }), /unsupported/);
+    }
+  });
+
+  it('adds navbar links once, even when a layout already links the same URL', async () => {
+    const context = {
+      siteConfig: { name: 'Before' }, data: {},
+      getLoader: () => ({ getPages: () => pages }),
+      defaultLayoutProps: async () => ({ links: [{ text: 'Blog', url: '/blog' }] }),
+      interceptRootMeta: () => {},
+    } as unknown as AppContext;
+    const plugin = docs7Plugin();
+    await plugin.init?.call(context);
+    const layout = await context.defaultLayoutProps({ lang: undefined });
+    const urls = (layout.links ?? []).flatMap((item) => ('url' in item && typeof item.url === 'string' ? [item.url] : []));
+    assert.equal(new Set(urls).size, urls.length);
+    assert.deepEqual(urls, [
+      '/blog',
+      ...(config.navbar?.links ?? []).map((link) => link.href).filter((href) => href !== '/blog'),
+    ]);
+  });
+
   it('applies site title, color metadata, provider appearance, and sidebar through real hooks', async () => {
     const context = {
       siteConfig: { name: 'Before' }, data: {},
@@ -68,7 +103,12 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.equal(context.siteConfig.name, config.name);
     const layout = await context.defaultLayoutProps({ lang: undefined });
     assert.equal(layout.nav?.title, config.name);
-    assert.equal(layout.links?.length, 1);
+    assert.deepEqual(layout.links, [
+      { text: 'Keep me', url: '/keep' },
+      ...(config.navbar?.links ?? []).map((link) => ({
+        text: link.label, url: link.href, external: !link.href.startsWith('/'),
+      })),
+    ]);
     const provider = context.data['core:provider']?.transformers?.[0];
     assert.equal((await provider?.({}))?.theme?.defaultTheme, 'system');
     const transform = context.data['core:docs-layout']?.transformers?.[0];

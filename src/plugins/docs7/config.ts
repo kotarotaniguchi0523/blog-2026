@@ -5,6 +5,7 @@ import type { Node, Root } from 'fumadocs-core/page-tree';
 
 interface Docs7Group {
   group: string;
+  icon?: string;
   pages: (string | Docs7Group)[];
 }
 
@@ -16,9 +17,22 @@ const pagePath = z.string().min(1).refine((value) =>
 );
 const group: z.ZodType<Docs7Group> = z.strictObject({
   group: z.string().min(1),
+  // Icon names are resolved by Docs7 at build time; Fumapress keeps its own sidebar icons.
+  icon: z.string().min(1).optional(),
   pages: z.array(z.union([pagePath, z.lazy(() => group)])).min(1),
 });
 const color = z.string().regex(/^#[\da-fA-F]{6}$/, 'Use a six-digit hex color.');
+const linkHref = z.string().min(1).refine((value) => {
+  if (value.startsWith('/')) return !value.startsWith('//');
+  if (!URL.canParse(value)) return false;
+  const { protocol } = new URL(value);
+  return protocol === 'https:' || protocol === 'http:';
+}, 'Use a site path such as /blog or an http(s) URL.');
+const navbarLink = z.strictObject({
+  label: z.string().min(1),
+  href: linkHref,
+  type: z.enum(['github', 'discord']).optional(),
+});
 
 // Intentionally a strict supported subset, not a replacement for Docs7's full schema.
 const configSchema = z.strictObject({
@@ -30,6 +44,9 @@ const configSchema = z.strictObject({
     default: z.enum(['light', 'dark', 'system']),
     strict: z.boolean().optional(),
   }).optional(),
+  // Docs7-only icon library setting; Fumapress ships its own icon set.
+  icons: z.strictObject({ library: z.enum(['fontawesome', 'lucide', 'tabler']) }).optional(),
+  navbar: z.strictObject({ links: z.array(navbarLink) }).optional(),
   navigation: z.strictObject({ groups: z.array(group).min(1) }),
 });
 

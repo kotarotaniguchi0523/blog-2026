@@ -24,8 +24,8 @@ export default defineConfig({
   content: docs.toFumadocsSource(),
   site: {
     // The site name is read from content/docs.json by docs7Plugin().
-    // the URL where your site is deployed, needed for SEO features like sitemap:
-    // baseUrl: "https://example.com",
+    // Deployed URL, used by sitemap and RSS:
+    baseUrl: "https://merino-dev.docs7.io",
   },
   meta: {
     root() {
