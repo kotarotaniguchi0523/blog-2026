@@ -8,6 +8,7 @@
     "dark": "#60A5FA"
   },
   "appearance": { "default": "system" },
+  "icons": { "library": "lucide" },
   "navbar": {
     "links": [
       { "label": "Blog", "href": "/blog" },
@@ -16,8 +17,8 @@
   },
   "navigation": {
     "groups": [
-      { "group": "ホーム", "pages": ["index", "about"] },
-      { "group": "コンテンツ", "pages": ["blog", "scraps"] }
+      { "group": "Home", "icon": "house", "pages": ["index", "about"] },
+      { "group": "Content", "icon": "newspaper", "pages": ["blog", "scraps"] }
     ]
   }
 }
