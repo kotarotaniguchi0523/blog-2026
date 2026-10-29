@@ -64,6 +64,15 @@ const configSchema = z.strictObject({
   }).optional(),
   // Docs7-only icon library setting; Fumapress ships its own icon set.
   icons: z.strictObject({ library: z.enum(['fontawesome', 'lucide', 'tabler']) }).optional(),
+  // Docs7-only page actions; Fumapress has no equivalent UI.
+  contextual: z.strictObject({
+    options: z.array(z.enum([
+      'copy', 'view', 'assistant', 'download-pdf', 'download-spec',
+      'chatgpt', 'claude', 'perplexity', 'grok', 'aistudio',
+      'devin', 'windsurf', 'mcp', 'add-mcp', 'cursor', 'vscode', 'devin-mcp',
+    ])).min(1),
+    display: z.enum(['header', 'toc']).optional(),
+  }).optional(),
   // Docs7-only indexing scope; Fumapress builds its sitemap from the source pages.
   seo: z.strictObject({ indexing: z.enum(['navigable', 'all']) }).optional(),
   navbar: navbar.optional(),

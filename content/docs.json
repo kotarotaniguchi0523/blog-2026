@@ -10,6 +10,10 @@
   "appearance": { "default": "system" },
   "icons": { "library": "lucide" },
   "seo": { "indexing": "all" },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity"],
+    "display": "header"
+  },
   "navigation": {
     "languages": [
       {
