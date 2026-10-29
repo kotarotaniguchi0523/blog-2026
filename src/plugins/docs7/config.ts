@@ -66,6 +66,14 @@ const configSchema = z.strictObject({
   icons: z.strictObject({ library: z.enum(['fontawesome', 'lucide', 'tabler']) }).optional(),
   // Docs7-only indexing scope; Fumapress builds its sitemap from the source pages.
   seo: z.strictObject({ indexing: z.enum(['navigable', 'all']) }).optional(),
+  // Docs7-only page actions. Fumapress has no equivalent UI.
+  contextual: z.strictObject({
+    options: z.array(z.enum([
+      'copy', 'assistant', 'view', 'download-pdf',
+      'chatgpt', 'claude', 'perplexity', 'grok', 'aistudio',
+      'mcp', 'add-mcp', 'cursor', 'vscode',
+    ])).min(1),
+  }).optional(),
   navbar: navbar.optional(),
   // `pages` is a flat sidebar, `groups` adds section labels, `languages` repeats
   // the navigation per locale (default language first, English in `en/`).
