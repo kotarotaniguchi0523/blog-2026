@@ -33,20 +33,27 @@ pnpm run build
 
 ## ローカルのビジュアルエディタ
 
-Fumadocs 公式の Studio 0.2.6 を開発依存として固定しています。Linux の **Node.js 24以上** で起動してください。
+Fumadocs 公式の Studio 0.2.6 を開発依存として固定しています。`node_modules` が導入済みなら
+追加のインストールは不要で、そのまま起動できます。
 
 ```sh
 pnpm editor
 ```
 
-`http://127.0.0.1:5180` で `content/` の MDX を編集できます。pnpm が PATH にない場合は
-`corepack pnpm editor` を使用します。npx / pnpm dlx やグローバルインストールは不要です。
-この環境で Node 22 が選ばれる場合は、Linux に導入済みの Node 24 を先に選びます。
+`http://127.0.0.1:5180` で `content/` の MDX を編集できます。npx / pnpm dlx やグローバルインストールは不要です。
+
+**この環境（`node_modules` は WSL の Linux 版）では Windows 側の `pnpm editor` は起動しません。**
+Windows の Node には Linux 版のネイティブバインディング（rolldown / esbuild など）が読み込めないためです。
+WSL で CLI を直接起動し、Windows のブラウザから開きます（WSL の 127.0.0.1 は Windows の localhost に転送されます）。
 
 ```sh
-export PATH="$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH"
-corepack pnpm editor
+wsl
+cd /mnt/c/Users/r02ta/projects/blog-2026
+node node_modules/@fumadocs-editor/studio/dist/cli.js --config fumadocs-studio.config.ts
 ```
+
+`pnpm install` が必要なのは、初回 clone 時・`package.json` / `pnpm-lock.yaml` を変更したとき・
+OS（WSL と Windows）を切り替えたときだけです。`node_modules` は OS ごとに作り直してください。
 
 変更はファイルへ自動保存されます。`Ctrl+S` でも保存できます。MDX タブでソースを直接編集できます。
 自己紹介の本文・見出しは Visual タブで直接入力できます。`studio/profile-components.tsx` が
