@@ -1,4 +1,55 @@
 /* Docs7 loads content CSS; Fumapress imports this same file from src/app.css. */
+
+/* Header language switch: Docs7 renders a dropdown ("Language: 日本語").
+   Show the same links as an inline EN | JA pair so the header stays identical
+   on both languages. Docs7 owns the markup, so this targets its ids. */
+#localization-select-trigger { display: none !important; }
+#localization-select-content {
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  pointer-events: auto !important;
+}
+#localization-select-content::after { display: none !important; }
+#localization-select-content a {
+  width: auto !important;
+  padding: 0 2px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: 0 !important;
+  font-weight: 600 !important;
+  letter-spacing: .04em !important;
+  line-height: 1.5 !important;
+  opacity: .55;
+  transition: opacity .15s ease;
+}
+#localization-select-content a > span { display: none !important; }
+#localization-select-content a:hover,
+#localization-select-content a[aria-current="page"] { opacity: 1; }
+#localization-select-content a[lang="en"] { order: 1; }
+#localization-select-content a[lang="ja"] { order: 2; }
+#localization-select-content a[lang="en"]::after { content: "EN"; font-size: 12px; }
+#localization-select-content a[lang="ja"]::after { content: "JA"; font-size: 12px; }
+#localization-select-content a[lang="ja"]::before {
+  content: "|";
+  margin-right: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: .5;
+}
+
 .merino-profile {
   --profile-ink: var(--text-primary, var(--color-fd-foreground, #18212f));
   --profile-muted: var(--text-secondary, var(--color-fd-muted-foreground, #64748b));

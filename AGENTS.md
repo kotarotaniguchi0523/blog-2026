@@ -53,6 +53,11 @@ Docs7 の挙動として確認済みの制約:
   ヘッダーではなく言語別のサイドバーに置く。
 - `navigation.languages` の `en` 側ページは `en/index` のように言語ディレクトリ込みで列挙する。
 - `/en` でも `<html lang="ja">` が出力される（Docs7 レンダラー側の挙動。こちらでは制御できない）。
+- ヘッダーの言語切り替えは、Docs7 が持つドロップダウン（`#localization-select-trigger`）を隠し、
+  同じ要素内のリンク一覧（`#localization-select-content`）を `content/style.css` で常時表示して
+  `EN | JA` に見せている。Docs7 のマークアップに依存するため、レンダラー更新で崩れたらこのブロックを見直す。
+- その言語切り替えは Docs7 の仕様で**相手言語のトップページ**（`/` ↔ `/en`）へ移動する。同じページの対訳へは飛ばない。
+  移動後のサイドバーは自動でその言語のリンク（`/en/about` など）に切り替わる。
 
 ## 編集（Fumadocs Studio）
 
