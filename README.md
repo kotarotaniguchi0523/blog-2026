@@ -42,18 +42,21 @@ pnpm editor
 
 `http://127.0.0.1:5180` で `content/` の MDX を編集できます。npx / pnpm dlx やグローバルインストールは不要です。
 
-**この環境（`node_modules` は WSL の Linux 版）では Windows 側の `pnpm editor` は起動しません。**
-Windows の Node には Linux 版のネイティブバインディング（rolldown / esbuild など）が読み込めないためです。
-WSL で CLI を直接起動し、Windows のブラウザから開きます（WSL の 127.0.0.1 は Windows の localhost に転送されます）。
+**コマンドは SBX（Docker Sandboxes の Linux サンドボックス）で実行します。** このリポジトリの
+`node_modules` は SBX で導入した Linux 版なので、Windows ホストの `pnpm editor` は
+ネイティブバインディング（rolldown / esbuild）を読み込めず起動しません。WSL でも動きますが、
+正規の環境は SBX です。
 
 ```sh
-wsl
-cd /mnt/c/Users/r02ta/projects/blog-2026
-node node_modules/@fumadocs-editor/studio/dist/cli.js --config fumadocs-studio.config.ts
+# ホスト側のターミナルから
+sbx exec opencode-blog-2026 -- bash -lc 'cd /c/Users/r02ta/projects/blog-2026 && pnpm editor'
+# サンドボックス内のシェルから
+cd /c/Users/r02ta/projects/blog-2026 && pnpm editor
 ```
 
-`pnpm install` が必要なのは、初回 clone 時・`package.json` / `pnpm-lock.yaml` を変更したとき・
-OS（WSL と Windows）を切り替えたときだけです。`node_modules` は OS ごとに作り直してください。
+SBX は Node.js 24 / pnpm 12.15.0 が入っており、`docs7:dev` もそのまま動きます
+（初回だけ Docs7 レンダラーの取得にネットワーク承認が必要）。
+`pnpm install` が必要なのは、初回 clone 時と `package.json` / `pnpm-lock.yaml` を変更したときだけです。
 
 変更はファイルへ自動保存されます。`Ctrl+S` でも保存できます。MDX タブでソースを直接編集できます。
 自己紹介の本文・見出しは Visual タブで直接入力できます。`studio/profile-components.tsx` が
