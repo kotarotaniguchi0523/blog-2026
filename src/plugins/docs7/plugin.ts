@@ -1,6 +1,6 @@
 import { createElement, Fragment } from 'react';
 import type { AppShape, PressPlugin } from 'fumapress';
-import { createDocs7PageTree, docs7ThemeCss, readDocs7Config } from './config.ts';
+import { createDocs7PageTree, docs7DefaultLanguage, docs7Languages, docs7NavbarLinks, docs7ThemeCss, readDocs7Config } from './config.ts';
 
 export interface Docs7PluginOptions {
   configPath?: string;
@@ -17,15 +17,15 @@ export function docs7Plugin<C extends AppShape = AppShape>(options: Docs7PluginO
         next(), createElement('style', { 'data-docs7-theme': true }, docs7ThemeCss(config)),
       ));
       const previous = this.defaultLayoutProps;
-      const navbarLinks = (config.navbar?.links ?? []).map((link) => ({
-        text: link.label,
-        url: link.href,
-        external: !link.href.startsWith('/'),
-      }));
       this.defaultLayoutProps = async (env) => {
         const inherited = await previous(env);
         const links = inherited.links ?? [];
         const linkedUrls = new Set(links.flatMap((item) => ('url' in item && typeof item.url === 'string' ? [item.url] : [])));
+        const navbarLinks = docs7NavbarLinks(config, env.lang).map((link) => ({
+          text: link.label,
+          url: link.href,
+          external: !link.href.startsWith('/'),
+        }));
         return {
           ...inherited,
           nav: { ...inherited.nav, title: config.name },
@@ -52,15 +52,19 @@ export function docs7Plugin<C extends AppShape = AppShape>(options: Docs7PluginO
         const layout = (this.data[key] ??= {});
         (layout.transformers ??= []).push(async ({ data, page }) => {
           const source = await context.getLoader();
-          data.layoutProps.tree = createDocs7PageTree(config, source.getPages(page.locale));
+          data.layoutProps.tree = createDocs7PageTree(config, source.getPages(page.locale), page.locale);
           return data;
         });
       }
     },
     async configure() {
-      // Validate references even before a page happens to request its sidebar.
+      // Validate every language, not just the one a page happens to request.
+      const config = readDocs7Config(options.configPath);
       const source = await this.getLoader();
-      createDocs7PageTree(readDocs7Config(options.configPath), source.getPages());
+      for (const locale of docs7Languages(config)) {
+        createDocs7PageTree(config, source.getPages(locale), locale);
+      }
+      createDocs7PageTree(config, source.getPages(docs7DefaultLanguage(config)), docs7DefaultLanguage(config));
     },
   };
 }

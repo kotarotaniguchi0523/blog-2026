@@ -10,10 +10,11 @@
 
 原本は一つだけ持つ:
 
-- `content/docs.json`: サイト名、色、ナビゲーションなど
-- `content/*.mdx`: 記事
-- `content/style.css`: トップのアイコンリンクと、表・アイコン・作品カードの共通スタイル
-- 公開ページはトップ (`index.mdx`)、プロフィール (`about.mdx`)、Blog一覧 (`blog.mdx`)、Scrap一覧 (`scraps.mdx`)。
+- `content/docs.json`: サイト名、色、ナビゲーション、言語など
+- `content/*.mdx`: 日本語（既定言語）のページ
+- `content/en/*.mdx`: 英語のページ。日本語と同じファイル名で対応させる
+- `content/style.css`: トップのアイコンリンクと、技術スタック・作品カードの共通スタイル
+- 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
 Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
@@ -65,9 +66,11 @@ Fumapress の開発サーバーは `content/docs.json` の変更で再起動す�
 ナビゲーションは表示順の設定であり、アクセス制御ではない。
 ナビゲーション外の MDX が非公開になるとは扱わない。
 
-ナビゲーションは `groups`（セクション見出し付き）と `pages`（見出しなしの一覧）の両方に対応する。
+ナビゲーションは `groups`（セクション見出し付き）、`pages`（見出しなしの一覧）、
+`languages`（言語ごとの一覧）に対応する。`languages` では `default: true` を1つだけ指定する。
+英語ページは `en/` を含むパス（例: `en/about`）で列挙する。Docs7 ローカルプレビューで確認済み。
 
-タブ・言語・バージョン・productGroups を持つナビゲーション、外部リンクのナビゲーション、
+タブ・バージョン・productGroups を持つナビゲーション、外部リンクのナビゲーション、
 footer / logo / redirects / integrations / filterSidebar 等の設定、
 `seo.indexing` 以外の SEO 設定、JSON `$ref` 分割は未対応。
 必要になったら Docs7 の実仕様を確認して追加する。

@@ -10,13 +10,17 @@
   "appearance": { "default": "system" },
   "icons": { "library": "lucide" },
   "seo": { "indexing": "all" },
-  "navbar": {
-    "links": [
-      { "label": "Blog", "href": "/blog" },
-      { "label": "Scrap", "href": "/scraps" }
-    ]
-  },
   "navigation": {
-    "pages": ["index", "about"]
+    "languages": [
+      {
+        "language": "ja",
+        "default": true,
+        "pages": ["index", "about", "blog", "scraps"]
+      },
+      {
+        "language": "en",
+        "pages": ["en/index", "en/about", "en/blog", "en/scraps"]
+      }
+    ]
   }
 }

@@ -22,6 +22,13 @@ const docs = defineDocs({
 
 export default defineConfig({
   content: docs.toFumadocsSource(),
+  // Japanese is the source of truth; `content/en/` holds the translation.
+  i18n: {
+    languages: ["ja", "en"],
+    defaultLanguage: "ja",
+    parser: "dir",
+    hideLocale: "default-locale",
+  },
   site: {
     // The site name is read from content/docs.json by docs7Plugin().
     // Deployed URL, used by sitemap and RSS:

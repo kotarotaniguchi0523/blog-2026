@@ -36,6 +36,22 @@ const navbarLink = z.strictObject({
 
 const pageList = z.array(z.union([pagePath, z.lazy(() => group)])).min(1);
 
+const navbar = z.strictObject({ links: z.array(navbarLink) });
+const languageEntry = z.union([
+  z.strictObject({
+    language: z.string().min(1),
+    default: z.boolean().optional(),
+    navbar: navbar.optional(),
+    groups: z.array(group).min(1),
+  }),
+  z.strictObject({
+    language: z.string().min(1),
+    default: z.boolean().optional(),
+    navbar: navbar.optional(),
+    pages: pageList,
+  }),
+]);
+
 // Intentionally a strict supported subset, not a replacement for Docs7's full schema.
 const configSchema = z.strictObject({
   $schema: z.literal('https://context7.com/schema/docs7.json').optional(),
@@ -50,11 +66,13 @@ const configSchema = z.strictObject({
   icons: z.strictObject({ library: z.enum(['fontawesome', 'lucide', 'tabler']) }).optional(),
   // Docs7-only indexing scope; Fumapress builds its sitemap from the source pages.
   seo: z.strictObject({ indexing: z.enum(['navigable', 'all']) }).optional(),
-  navbar: z.strictObject({ links: z.array(navbarLink) }).optional(),
-  // `pages` is a flat sidebar; `groups` adds section labels above the entries.
+  navbar: navbar.optional(),
+  // `pages` is a flat sidebar, `groups` adds section labels, `languages` repeats
+  // the navigation per locale (default language first, English in `en/`).
   navigation: z.union([
     z.strictObject({ groups: z.array(group).min(1) }),
     z.strictObject({ pages: pageList }),
+    z.strictObject({ languages: z.array(languageEntry).min(1) }),
   ]),
 });
 
@@ -68,11 +86,52 @@ export function parseDocs7Config(value: unknown): Docs7Config {
   if (result.data.appearance?.strict && result.data.appearance.default === 'system') {
     throw new Error('[Docs7 plugin] strict appearance requires light or dark.');
   }
+  if ('languages' in result.data.navigation) {
+    const defaults = result.data.navigation.languages.filter((language) => language.default);
+    if (defaults.length !== 1) {
+      throw new Error('[Docs7 plugin] navigation.languages requires exactly one default language.');
+    }
+  }
   return result.data;
 }
 
 export function readDocs7Config(configPath = 'content/docs.json'): Docs7Config {
   return parseDocs7Config(JSON.parse(readFileSync(resolve(configPath), 'utf8')));
+}
+
+/** Locales listed in docs.json, empty when the site is single-language. */
+export function docs7Languages(config: Docs7Config): string[] {
+  return 'languages' in config.navigation
+    ? config.navigation.languages.map((language) => language.language)
+    : [];
+}
+
+/** Language treated as the source of truth, `undefined` for single-language sites. */
+export function docs7DefaultLanguage(config: Docs7Config): string | undefined {
+  if (!('languages' in config.navigation)) return undefined;
+  return config.navigation.languages.find((language) => language.default)?.language;
+}
+
+function languageEntryFor(config: Docs7Config, locale: string | undefined) {
+  if (!('languages' in config.navigation)) return undefined;
+  const languages = config.navigation.languages;
+  return languages.find((language) => language.language === locale)
+    ?? languages.find((language) => language.default)
+    ?? languages[0];
+}
+
+function navigationItems(config: Docs7Config, locale?: string): (string | Docs7Group)[] {
+  const language = languageEntryFor(config, locale);
+  if (language) return 'groups' in language ? language.groups : language.pages;
+  if ('groups' in config.navigation) return config.navigation.groups;
+  if ('pages' in config.navigation) return config.navigation.pages;
+  return [];
+}
+
+/** Navbar links for one locale, falling back to the site-wide links. */
+export function docs7NavbarLinks(config: Docs7Config, locale?: string): { label: string; href: string }[] {
+  const language = languageEntryFor(config, locale);
+  return language?.navbar?.links ?? config.navbar?.links ?? [];
 }
 
 interface SourcePage {
@@ -81,8 +140,16 @@ interface SourcePage {
   data: { title?: string; description?: string };
 }
 
-export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[]): Root {
-  const index = new Map(pages.map((page) => [page.path.replaceAll('\\', '/').replace(/\.(md|mdx)$/, ''), page]));
+export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[], locale?: string): Root {
+  // Docs7 lists translated pages with their language folder (`en/about`), while
+  // `source.getPages(locale)` keeps the same prefix. Accept both forms.
+  const index = new Map<string, SourcePage>();
+  for (const page of pages) {
+    const key = page.path.replaceAll('\\', '/').replace(/\.(md|mdx)$/, '');
+    index.set(key, page);
+    const slash = key.indexOf('/');
+    if (slash > 0) index.set(key.slice(slash + 1), page);
+  }
   const seen = new Set<string>();
   function entry(value: string | Docs7Group, position: string): Node {
     if (typeof value !== 'string') {
@@ -97,11 +164,7 @@ export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[]): R
     if (!page) throw new Error(`[Docs7 plugin] Navigation page not found: ${value}`);
     return { type: 'page', $id: `docs7:${value}`, $ref: page.path, name: page.data.title ?? value, url: page.url };
   }
-  return { name: config.name, children: navigationItems(config).map((item, i) => entry(item, String(i))) };
-}
-
-function navigationItems(config: Docs7Config): (string | Docs7Group)[] {
-  return 'groups' in config.navigation ? config.navigation.groups : config.navigation.pages;
+  return { name: config.name, children: navigationItems(config, locale).map((item, i) => entry(item, String(i))) };
 }
 
 export function docs7ThemeCss(config: Docs7Config): string {

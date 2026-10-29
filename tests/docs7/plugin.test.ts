@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { AppContext } from 'fumapress';
-import { createDocs7PageTree, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
+import { createDocs7PageTree, docs7NavbarLinks, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
 import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
 import { docs7Components } from '../../src/plugins/docs7/components.ts';
 
@@ -19,6 +19,11 @@ const pages = [
   { path: 'blog.mdx', url: '/blog', data: { title: 'Blog' } },
   { path: 'scraps.mdx', url: '/scraps', data: { title: 'Scrap' } },
 ];
+// Translations keep their language folder in the source path, like Docs7 does.
+const enPages = pages.map((page) => ({
+  ...page, path: `en/${page.path}`, url: page.url === '/' ? '/en' : `/en${page.url}`,
+}));
+const getPages = (locale?: string) => (locale === 'en' ? enPages : pages);
 
 describe('Docs7 configuration and Fumapress plugin', () => {
   it('maps configured order and nested groups to actual source URLs', () => {
@@ -68,6 +73,21 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     }
   });
 
+  it('builds one page tree per language and requires a single default', () => {
+    const languages = parseDocs7Config({ ...config, navigation: { languages: [
+      { language: 'ja', default: true, navbar: { links: [{ label: 'Blog', href: '/blog' }] }, pages: ['index', 'about'] },
+      { language: 'en', navbar: { links: [{ label: 'Blog', href: '/en/blog' }] }, pages: ['index'] },
+    ] } });
+    assert.equal(createDocs7PageTree(languages, pages).children.length, 2);
+    assert.equal(createDocs7PageTree(languages, pages, 'en').children.length, 1);
+    assert.deepEqual(docs7NavbarLinks(languages, 'en'), [{ label: 'Blog', href: '/en/blog' }]);
+    assert.deepEqual(docs7NavbarLinks(languages, undefined), [{ label: 'Blog', href: '/blog' }]);
+    assert.throws(() => parseDocs7Config({ ...config, navigation: { languages: [
+      { language: 'ja', pages: ['index'] },
+      { language: 'en', pages: ['index'] },
+    ] } }), /exactly one default/);
+  });
+
   it('accepts a flat page list and treats seo as Docs7-only', () => {
     const flat = parseDocs7Config({ ...config, seo: { indexing: 'all' }, navigation: { pages: ['index', 'about'] } });
     assert.deepEqual(createDocs7PageTree(flat, pages).children.map((node) => node.type), ['page', 'page']);
@@ -78,7 +98,7 @@ describe('Docs7 configuration and Fumapress plugin', () => {
   it('adds navbar links once, even when a layout already links the same URL', async () => {
     const context = {
       siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages: () => pages }),
+      getLoader: () => ({ getPages }),
       defaultLayoutProps: async () => ({ links: [{ text: 'Blog', url: '/blog' }] }),
       interceptRootMeta: () => {},
     } as unknown as AppContext;
@@ -89,14 +109,14 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.equal(new Set(urls).size, urls.length);
     assert.deepEqual(urls, [
       '/blog',
-      ...(config.navbar?.links ?? []).map((link) => link.href).filter((href) => href !== '/blog'),
+      ...docs7NavbarLinks(config, undefined).map((link) => link.href).filter((href) => href !== '/blog'),
     ]);
   });
 
   it('applies site title, color metadata, provider appearance, and sidebar through real hooks', async () => {
     const context = {
       siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages: () => pages }),
+      getLoader: () => ({ getPages }),
       defaultLayoutProps: async () => ({ nav: { title: 'Before' }, links: [{ text: 'Keep me', url: '/keep' }] }),
       interceptRootMeta: (hook: { (env: { next: () => null }): unknown }) => {
         const markup = renderToStaticMarkup(hook({ next: () => null }) as ReturnType<typeof createElement>);
@@ -112,7 +132,7 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.equal(layout.nav?.title, config.name);
     assert.deepEqual(layout.links, [
       { text: 'Keep me', url: '/keep' },
-      ...(config.navbar?.links ?? []).map((link) => ({
+      ...docs7NavbarLinks(config, undefined).map((link) => ({
         text: link.label, url: link.href, external: !link.href.startsWith('/'),
       })),
     ]);

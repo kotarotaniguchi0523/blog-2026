@@ -63,8 +63,16 @@ Studio は別プロセスで起動し、サイトのコード・ビルド・Docs
 デプロイせずに編集する間は push しないでください。
 
 トップ (`/`) は名前と GitHub アイコンのみの入口、プロフィール (`/about`) に技術スタックと作品を置いています。
-Blog (`/blog`)・Scrap (`/scraps`) へはヘッダーのナビゲーションから移動できます。
+Blog (`/blog`)・Scrap (`/scraps`) はサイドバーから移動できます。
 どちらも現在は記事・スレッドのない一覧ページです。Scrap の GitHub 同期は未実装です。
+
+### 日本語と英語
+
+`content/` 直下が日本語（既定言語）、`content/en/` が英語です。`/` が日本語、`/en` が英語で、
+Fumapress は `i18n`（`parser: "dir"`, `hideLocale: "default-locale"`）で同じ構成を読みます。
+
+**日本語が正**です。日本語のページを変更したら、同じ変更で `content/en/` の対応ファイルも更新してください。
+ページの追加・並びは `content/docs.json` の `navigation.languages` に言語ごとに書きます。
 
 導入方法・Node 要件は [公式 Studio ドキュメント](https://editor.fumadocs.dev/studio) を参照。
 
@@ -121,9 +129,13 @@ Scrap の公開処理・UI はまだ未実装です。
 ## リポジトリ構成
 
 ```
-├── content/          # MDX コンテンツ(ブログ記事)
+├── content/          # 日本語の MDX（既定言語）
+│   ├── docs.json     # ナビゲーション・テーマ・言語設定
 │   ├── index.mdx     # トップページ
-│   └── about.mdx     # プロフィール(技術スタック・作品)
+│   ├── about.mdx     # プロフィール(技術スタック・作品)
+│   ├── blog.mdx      # Blog 一覧
+│   ├── scraps.mdx    # Scrap 一覧
+│   └── en/           # 英語（同じファイル名で対応させる）
 ├── src/              # アプリケーションソース(src/app.css など)
 ├── press.config.tsx  # Fumapress の設定
 ├── vite.config.ts    # Vite の設定
