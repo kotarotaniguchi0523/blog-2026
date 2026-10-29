@@ -16,7 +16,7 @@
   },
   "navigation": {
     "groups": [
-      { "group": "プロフィール", "pages": ["index"] },
+      { "group": "ホーム", "pages": ["index", "about"] },
       { "group": "コンテンツ", "pages": ["blog", "scraps"] }
     ]
   }

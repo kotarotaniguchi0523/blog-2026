@@ -7,6 +7,25 @@
   color: var(--profile-ink);
 }
 
+.merino-home {
+  --home-ink: var(--text-primary, var(--color-fd-foreground, #18212f));
+  --home-muted: var(--text-secondary, var(--color-fd-muted-foreground, #64748b));
+  --home-border: color-mix(in srgb, var(--home-ink) 14%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--home-ink);
+}
+
+.merino-home .home-name { margin: 0; font-size: clamp(24px, 4vw, 30px); font-weight: 600; letter-spacing: -.01em; line-height: 1.4; }
+.merino-home .home-meta { margin: 0; color: var(--home-muted); line-height: 1.8; }
+.merino-home .home-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.merino-home a.home-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--home-border); border-radius: 10px; color: var(--home-ink); transition: background-color .15s ease, border-color .15s ease; }
+.merino-home a.home-icon:hover { background: color-mix(in srgb, var(--home-ink) 7%, transparent); border-color: color-mix(in srgb, var(--home-ink) 30%, transparent); }
+.merino-home a.home-icon:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
+.merino-home a.home-icon img { display: block !important; width: 24px !important; height: 24px !important; max-width: 24px !important; margin: 0 !important; padding: 0; border: 0; border-radius: 0; }
+
 .merino-profile .profile-project-number {
   display: grid;
   place-items: center;

@@ -51,6 +51,7 @@ corepack pnpm editor
 変更はファイルへ自動保存されます。`Ctrl+S` でも保存できます。MDX タブでソースを直接編集できます。
 自己紹介の本文・見出しは Visual タブで直接入力できます。`studio/profile-components.tsx` が
 HTML の編集領域を定義し、公開時と同じ CSS を読み込みます。アイコン表・リンク・属性は MDX タブで編集してください。
+
 Studio の編集用表示は公開画面の完全なプレビューではありません。
 公開UIを維持するための画像・寸法・比較手順は [見た目の基準](./docs/ui-baseline/README.md) に保存しています。
 公開時の見た目は、別ターミナルの `pnpm docs7:dev`（ポート3333）で確認してください。
@@ -61,7 +62,8 @@ Studio は別プロセスで起動し、サイトのコード・ビルド・Docs
 編集・保存ではデプロイされません。ただし、既存の GitHub 連携により `main` へ push すると本番更新されます。
 デプロイせずに編集する間は push しないでください。
 
-自己紹介には Blog (`/blog`)・Scrap (`/scraps`) へのボタンがあり、サイドバーからも移動できます。
+トップ (`/`) は名前と GitHub アイコンのみの入口、プロフィール (`/about`) に技術スタックと作品を置いています。
+Blog (`/blog`)・Scrap (`/scraps`) へはヘッダーのナビゲーションから移動できます。
 どちらも現在は記事・スレッドのない一覧ページです。Scrap の GitHub 同期は未実装です。
 
 導入方法・Node 要件は [公式 Studio ドキュメント](https://editor.fumadocs.dev/studio) を参照。
@@ -120,7 +122,8 @@ Scrap の公開処理・UI はまだ未実装です。
 
 ```
 ├── content/          # MDX コンテンツ(ブログ記事)
-│   └── index.mdx     # トップページ
+│   ├── index.mdx     # トップページ
+│   └── about.mdx     # プロフィール(技術スタック・作品)
 ├── src/              # アプリケーションソース(src/app.css など)
 ├── press.config.tsx  # Fumapress の設定
 ├── vite.config.ts    # Vite の設定

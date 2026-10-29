@@ -12,8 +12,8 @@
 
 - `content/docs.json`: サイト名、色、ナビゲーションなど
 - `content/*.mdx`: 記事
-- `content/style.css`: 自己紹介の HTML と表・アイコン・作品カードの共通スタイル
-- 公開ページは自己紹介、Blog一覧 (`blog.mdx`)、Scrap一覧 (`scraps.mdx`)。
+- `content/style.css`: トップのアイコンリンクと、表・アイコン・作品カードの共通スタイル
+- 公開ページはトップ (`index.mdx`)、プロフィール (`about.mdx`)、Blog一覧 (`blog.mdx`)、Scrap一覧 (`scraps.mdx`)。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
 Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
@@ -37,7 +37,7 @@ pnpm dev
 pnpm docs7:dev
 ```
 
-Docs7 は `http://localhost:3333`、自己紹介ページは `/`。
+Docs7 は `http://localhost:3333`、トップページは `/`、プロフィールは `/about`。
 CLI はローカル依存 `@upstash/docs7@0.1.12` を `node` から直接呼ぶ。
 `docs7.env` の `DOCS7_RENDERER_VERSION=0.1.61` でプレビューのレンダラーを固定した。
 初回は CLI が公式の署名付きレンダラーをダウンロードするため、ネットワーク接続が必要。
@@ -97,7 +97,7 @@ Fumapress だけのコンポーネントを記事に使うと、Docs7 で表示�
 
 - 公開 URL: https://merino-dev.docs7.io （初回公開後に slug を `merino-dev` へ変更）
 - 公開対象: `content/` の設定、MDX、スタイルシート。
-  自己紹介に加え Blog / Scrap の一覧を配置し、main への push で反映する。
+  トップ / プロフィール / Blog / Scrap の4ページを配置し、main への push で反映する。
 - `whoami` がログイン済み、CLI が `Your site is live`、管理画面が `Succeeded` になったことを確認。
 - 初回公開時は `/` と `/compatibility` を確認。その後、利用者の指定で自己紹介1ページに変更。
 
