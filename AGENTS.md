@@ -12,6 +12,54 @@
 
 `@fumapress/mintlify` は実装の参考資料として扱い、**Docs7 向けの連携を独自に実装します**。同パッケージの採用を前提にしません。Docs7 と Fumapress の公開仕様、型定義、ソースを確認し、対応できる設定と MDX コンポーネントを明示してください。API や設定キーは推測しないでください。
 
+## サイト構成（現状）
+
+公開ページは日本語と英語の 2 言語、各 4 ページです。
+
+| 日本語 | 英語 | 内容 |
+| --- | --- | --- |
+| `/` | `/en` | 名前・所属・GitHub アイコンだけの入口 |
+| `/about` | `/en/about` | 技術スタック（アイコンのみのグリッド）とポートフォリオ／発表物 |
+| `/blog` | `/en/blog` | 空の一覧 |
+| `/scraps` | `/en/scraps` | 空の一覧（GitHub 同期は未実装） |
+
+- 見た目は `content/style.css` の `.merino-home`（トップ）と `.merino-profile`（プロフィール）で完結させる。
+  CSS は Docs7 が `content/style.css` を優先して読み、Fumapress は `src/app.css` から同じファイルを import する。
+- プロフィールの作品は「ポートフォリオ」と「発表物」に分ける。外部リンクは文章中の埋め込みではなくボタンに置く。
+- 技術スタックは表を使わず、`ul.stack-items` の `li`（アイコン + 名前）を領域ごとに並べる。リンクは埋め込まない。
+- サイト名・言語・ナビゲーション・アイコンは `content/docs.json` に集約する。
+
+## Docs7 連携の実装
+
+`src/plugins/docs7/` が docs.json を Fumapress に読み替える。`content/docs.json` を唯一の原本とし、
+Docs7 とローカルプレビューで同じ設定を共有する。
+
+- `config.ts`: docs.json の Zod スキーマ（意図的に「対応サブセットのみ」を許可）、ページツリー生成、テーマ CSS。
+- `plugin.ts`: サイト名・テーマ色・外観・サイドバー・ナビバーの Fumapress フックへの変換。
+- `adapter.ts` / `components.ts`: Docs7 の MDX コンポーネントを Fumadocs UI に変換。
+- `vite.ts`: docs.json の変更で開発サーバーを再起動する。
+
+対応する設定: `name` / `theme` / `colors` / `appearance` / `icons.library` / `seo.indexing` /
+`navbar.links` / `navigation.{groups,pages,languages}`。未対応キーは起動時に例外にする。
+
+Docs7 の挙動として確認済みの制約:
+
+- 言語ごとの `navbar.links` は切り替わらない（グローバル設定のみ反映）。そのため Blog / Scrap は
+  ヘッダーではなく言語別のサイドバーに置く。
+- `navigation.languages` の `en` 側ページは `en/index` のように言語ディレクトリ込みで列挙する。
+- `/en` でも `<html lang="ja">` が出力される（Docs7 レンダラー側の挙動。こちらでは制御できない）。
+
+## 編集（Fumadocs Studio）
+
+`pnpm editor`（`127.0.0.1:5180`）で `content/` の MDX を編集する。英語ページも `content/en/` 配下として同じ手順で編集できる。
+
+- `fumadocs-studio.config.ts` が `root: "content"`、`components`、`styles` を指定する。
+- `studio/profile-components.tsx` が Visual タブで入力できる要素を定義する。
+  `div` / `section` / `nav` / `ul` / `li` は本文領域、`p` / `h2` / `h3` はテキスト領域、
+  `img` は props（`src` / `alt` / `width` / `height`）で編集する。`ul` は `li` のリストとして扱う。
+- `studio/style.css` は Studio の領域ラッパーを `display: contents` にする編集専用の調整。
+- Studio の表示は公開画面の完全なプレビューではない。公開時の見た目は `pnpm docs7:dev` で確認する。
+
 ## コンテンツ入力
 
 1. **リポジトリ内の MDX ファイル**(現状。`content/` 以下に配置)
@@ -30,6 +78,7 @@
 ## 計画中のカスタム機能: Zenn「Scrap」風スレッド
 
 Zenn の Scrap のようなスレッド機能を検討しています。**まだ実装していません。**
+`/scraps` と `/en/scraps` は空の一覧ページとして公開済みで、同期処理・UI は未着手です。
 
 ### スケッチ
 
@@ -87,6 +136,18 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 - 相対時刻の更新戦略(SSR での初回表示とクライアントでの更新)
 
 ## 開発ルール
+
+### コマンド
+
+| 目的 | コマンド |
+| --- | --- |
+| Fumapress 開発サーバー | `pnpm dev` |
+| Docs7 プレビュー（公開と同じ見た目、3333） | `pnpm docs7:dev` |
+| Studio（編集、5180） | `pnpm editor` |
+| 静的ビルド | `pnpm build` |
+| テスト | `pnpm test` |
+| 型検査 | `pnpm types:check` |
+| 未使用検出 | `pnpm knip` |
 
 ### Windows バインドマウント(SBX)制約
 
