@@ -247,13 +247,15 @@ Studio と Docs7 プレビューはこの移行の範囲外（`content/` は変�
   `@fumadocs/satteri` 0.7.x はこれを import するため、16.19.0 と組み合わせるとビルドが
   「does not provide an export named 'createShowContext'」で失敗する。
 - 同じ日（2026-11-11）に公開された `@fumadocs/astro` 0.3.0 / `@fumadocs/satteri` 0.8.0 はこの関数を使わない。
-  一方 `@fumapress/astro` 0.1.0 の peer は `@fumadocs/astro` ^0.2.1 のままで、上流 main（`packages/astro/package.json`）も
-  ^0.2.2 だった。上流の issue は確認時点で見つからなかった。
+  一方、公開済みの `@fumapress/astro` 0.1.0 の peer は `@fumadocs/astro` ^0.2.1 のまま。上流 main では
+  fuma-nama/fumapress@20c5476（2026-11-12 "chore: bump deps"）で peer が `@fumadocs/astro` ^0.3.0、
+  `fumadocs-core` / `fumadocs-ui` ^16.19.0 に更新済みだが、確認時点で npm には未リリース（version は 0.1.0 のまま）。
+  上流に同じ問題の issue は無く、修正済みのため issue は立てていない。
 - ダウングレードはしない方針のため、fumadocs-core / Base UI 版 fumadocs-ui 16.19.0 と `@fumadocs/astro` 0.3.0 を使い、
   peer の不一致は `pnpm-workspace.yaml` の `peerDependencyRules.allowedVersions` に理由付きで許可した。
   `@fumapress/astro` が `@fumadocs/astro` から使うのは既定エクスポート（`fumadocs()`）と `NoProcessedMarkdownError` だけで、
   0.3.0 にも同じ形で存在する。ビルド・開発サーバー・ブラウザでのハイドレーション（コンソールエラー 0）を確認した。
-  `@fumapress/astro` が 0.3 を受け入れたらこの例外を削除する。
+  20c5476 を含む `@fumapress/astro` がリリースされたら、更新してこの例外を削除する。
 - `metaLoader()` は `content/` の `**/*.{json,yaml}` をすべて読むため、Docs7 の `docs.json` も Fumadocs の
   メタファイルとして渡ってしまう。`press.config.tsx` で `meta.json` だけに絞る。
 - MDX の本文は React の island になり、ブラウザでもハイドレートされる（コンポーネントの props はシリアライズ可能であること）。

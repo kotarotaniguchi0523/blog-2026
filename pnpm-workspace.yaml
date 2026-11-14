@@ -16,6 +16,7 @@ peerDependencyRules:
     # @fumapress/astro 0.1.0 declares ^0.2.1, but @fumadocs/astro 0.2.x needs
     # @fumadocs/satteri 0.7, which imports createShowContext, removed in
     # fumadocs-core 16.19.0. 0.3.0 (same release as 16.19.0) keeps the API that
-    # @fumapress/astro uses (default export, NoProcessedMarkdownError). Remove once
-    # @fumapress/astro accepts 0.3.
+    # @fumapress/astro uses (default export, NoProcessedMarkdownError). Upstream main
+    # already declares ^0.3.0 (fuma-nama/fumapress@20c5476, unreleased): remove this
+    # once a release includes it.
     '@fumapress/astro>@fumadocs/astro': '0.3.0'
