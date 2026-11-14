@@ -23,12 +23,12 @@
   "dependencies": {
     "@octokit/core": "7.0.8",
     "@octokit/plugin-paginate-rest": "16.0.0",
-    "fumadocs-core": "^16.16.2",
-    "fumadocs-mdx": "^15.4.6",
-    "fumadocs-ui": "npm:@fumadocs/base-ui@^16.16.2",
-    "fumapress": "1.6.2",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "fumadocs-core": "^16.19.0",
+    "fumadocs-mdx": "^15.6.1",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@^16.19.0",
+    "fumapress": "2.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -44,6 +44,6 @@
     "knip": "6.43.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.8"
   }
 }

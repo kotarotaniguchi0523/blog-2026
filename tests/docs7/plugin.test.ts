@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { AppContext } from 'fumapress';
+import type { Context } from 'fumapress';
+import type { Root } from 'fumadocs-core/page-tree';
 import { createDocs7PageTree, docs7NavbarLinks, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
-import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
+import { docs7PageTree, docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
 import { docs7Components } from '../../src/plugins/docs7/components.ts';
 
 const config = readDocs7Config();
@@ -95,54 +96,48 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.throws(() => parseDocs7Config({ ...config, seo: { indexing: 'sometimes' } }), /unsupported/);
   });
 
-  it('adds navbar links once, even when a layout already links the same URL', async () => {
-    const context = {
-      siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages }),
-      defaultLayoutProps: async () => ({ links: [{ text: 'Blog', url: '/blog' }] }),
-      interceptRootMeta: () => {},
-    } as unknown as AppContext;
+  it('applies site title, navbar links, color metadata and provider appearance through v2 hooks', async () => {
     const plugin = docs7Plugin();
-    await plugin.init?.call(context);
-    const layout = await context.defaultLayoutProps({ lang: undefined });
-    const urls = (layout.links ?? []).flatMap((item) => ('url' in item && typeof item.url === 'string' ? [item.url] : []));
-    assert.equal(new Set(urls).size, urls.length);
-    assert.deepEqual(urls, [
-      '/blog',
-      ...docs7NavbarLinks(config, undefined).map((link) => link.href).filter((href) => href !== '/blog'),
-    ]);
+    const context = {} as Context;
+    const head = await plugin.head?.call(context, { lang: undefined });
+    assert.deepEqual(head, [{ tag: 'style', attrs: { 'data-docs7-theme': '' }, children: docs7ThemeCss(config) }]);
+    const layout = await plugin.layoutProps?.call(context, { lang: undefined });
+    assert.equal(layout?.nav?.title, config.name);
+    const navbarLinks = docs7NavbarLinks(config, undefined).map((link) => ({
+      text: link.label, url: link.href, external: !link.href.startsWith('/'),
+    }));
+    assert.deepEqual(layout?.links, navbarLinks.length ? navbarLinks : undefined);
+    const provider = await plugin.providerProps?.call(context, { lang: undefined });
+    assert.equal(provider?.theme?.defaultTheme, config.appearance?.default);
   });
 
-  it('applies site title, color metadata, provider appearance, and sidebar through real hooks', async () => {
-    const context = {
-      siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages }),
-      defaultLayoutProps: async () => ({ nav: { title: 'Before' }, links: [{ text: 'Keep me', url: '/keep' }] }),
-      interceptRootMeta: (hook: { (env: { next: () => null }): unknown }) => {
-        const markup = renderToStaticMarkup(hook({ next: () => null }) as ReturnType<typeof createElement>);
-        assert.match(markup, /data-docs7-theme/);
-        assert.ok(markup.includes(docs7ThemeCss(config)));
-      },
-    } as unknown as AppContext;
+  it('replaces the generated page tree of each language through a loader plugin', async () => {
     const plugin = docs7Plugin();
-    await plugin.init?.call(context);
-    await plugin.configure?.call(context);
-    assert.equal(context.siteConfig.name, config.name);
-    const layout = await context.defaultLayoutProps({ lang: undefined });
-    assert.equal(layout.nav?.title, config.name);
-    assert.deepEqual(layout.links, [
-      { text: 'Keep me', url: '/keep' },
-      ...docs7NavbarLinks(config, undefined).map((link) => ({
-        text: link.label, url: link.href, external: !link.href.startsWith('/'),
-      })),
-    ]);
-    const provider = context.data['core:provider']?.transformers?.[0];
-    assert.equal((await provider?.({}))?.theme?.defaultTheme, 'system');
-    const transform = context.data['core:docs-layout']?.transformers?.[0];
+    const result = await plugin.configureLoader?.call({} as Context, { baseUrl: '/' });
+    const loaderPlugin = result?.plugins?.[0];
+    const transform = loaderPlugin && !Array.isArray(loaderPlugin) ? loaderPlugin.transformPageTree?.root : undefined;
     assert.ok(transform);
-    const data = { body: null, layoutProps: { tree: { name: 'Old', children: [] } }, pageProps: {} };
-    const output = await transform({ data, page: { ...pages[0]!, type: 'page', slugs: [], locale: undefined } });
-    assert.deepEqual(output.layoutProps.tree, createDocs7PageTree(config, pages));
+    // A generated tree in the shape Fumadocs builds: files and a folder, in file-system order.
+    const generated = (list: typeof pages): Root => ({
+      name: 'Generated',
+      children: [
+        { type: 'folder', name: 'Nested', children: list.slice(2).map((page) => ({
+          type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path,
+        })) },
+        ...list.slice(0, 2).reverse().map((page) => ({
+          type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path,
+        })),
+      ],
+    });
+    for (const locale of [undefined, 'en']) {
+      const list = getPages(locale);
+      const tree: Root = transform.call({ locale, options: {} } as ThisParameterType<typeof transform>, generated(list));
+      assert.deepEqual(tree, createDocs7PageTree(config, list, locale));
+      assert.deepEqual(docs7PageTree(config, generated(list), locale), tree);
+    }
+    // Fumadocs runs the same transformer on the fallback tree of unlisted pages; leave it alone.
+    const fallback: Root = { name: 'Fallback', children: [] };
+    assert.equal(transform.call({ options: { generateFallback: false } } as ThisParameterType<typeof transform>, fallback), fallback);
   });
 });
 

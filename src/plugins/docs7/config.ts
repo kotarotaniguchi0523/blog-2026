@@ -150,8 +150,9 @@ interface SourcePage {
 }
 
 export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[], locale?: string): Root {
-  // Docs7 lists translated pages with their language folder (`en/about`), while
-  // `source.getPages(locale)` keeps the same prefix. Accept both forms.
+  // Docs7 lists translated pages with their language folder (`en/about`). Source
+  // paths may keep that prefix or drop it (the page tree of the `dir` parser
+  // does), so accept both forms.
   const index = new Map<string, SourcePage>();
   for (const page of pages) {
     const key = page.path.replaceAll('\\', '/').replace(/\.(md|mdx)$/, '');
@@ -169,7 +170,8 @@ export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[], lo
     }
     if (seen.has(value)) throw new Error(`[Docs7 plugin] Duplicate navigation page: ${value}`);
     seen.add(value);
-    const page = index.get(value);
+    const page = index.get(value)
+      ?? (locale && value.startsWith(`${locale}/`) ? index.get(value.slice(locale.length + 1)) : undefined);
     if (!page) throw new Error(`[Docs7 plugin] Navigation page not found: ${value}`);
     return { type: 'page', $id: `docs7:${value}`, $ref: page.path, name: page.data.title ?? value, url: page.url };
   }

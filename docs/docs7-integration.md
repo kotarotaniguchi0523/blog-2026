@@ -5,7 +5,9 @@
 ## 構成
 
 `src/plugins/docs7/` はこのリポジトリ独自のローカルプラグイン。
-`@fumapress/mintlify` の設定読み込み、`PressPlugin.init`、レイアウト変換の設計を参考にした。
+`@fumapress/mintlify` の設定読み込みとレイアウト変換の設計を参考にした（Fumapress 1.x 時点）。
+2026-11-14 に Fumapress 2.0.2 へ移行し、`Plugin` の `head` / `layoutProps` / `providerProps` /
+`configureLoader` フックへ書き換えた（後述「Fumapress 2 への移行」）。
 同パッケージは依存として追加していない。
 
 原本は一つだけ持つ:
@@ -17,7 +19,8 @@
 - 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
-Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
+Fumapress は `press.config.tsx` の `docs7Plugin()` と、`vite.config.ts` の
+`press({ components: "./src/plugins/docs7/mdx.ts" })` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
 生成ファイルのコピーやシンボリックリンクは使わない。
 Docs7 レンダラー 0.1.61 がコンテンツ内の CSS を収集し、`style.css` を優先して
@@ -180,3 +183,37 @@ provenance の記録はない。CLI のソースはダウンロード時の SHA-
 - [Docs7 configuration](https://context7.com/docs/docs7/configuration)
 - [Docs7 component documentation source](https://github.com/upstash/context7/tree/master/docs/docs7/components)
 - [採用した Docs7 CLI の公開記録](https://registry.npmjs.org/@upstash/docs7/0.1.12)
+
+## Fumapress 2 への移行
+
+確認日: 2026-11-14。[公式の移行ガイド](https://press.fumadocs.dev/docs/migrate/v2)、
+[リリースノート](https://github.com/fuma-nama/fumapress/releases)、導入した `fumapress` 2.0.2 /
+`@fumapress/core` の型定義と配布ソースで確認。
+
+| 1.x | 2.0（このリポジトリでの対応） |
+| --- | --- |
+| `defineConfig({ content, i18n, ... })` | `createPress(content, { i18n }).plugins(...)` → `app.config({ site, head })` |
+| `.adapters(docs7Mdx())`、`createRelativeLink()` | `press({ components })` に MDX コンポーネントのモジュールを渡す。相対リンクは Fumapress が解決 |
+| `fumapress/adapters/mdx/schema` | `fumapress/schema` |
+| `meta.root()`（JSX） | `head`（`{ tag, attrs }` の配列。属性は HTML 名 `crossorigin`） |
+| `PressPlugin` / `AppContext` | `Plugin` / `Context` |
+| `this.siteConfig.name = ...` | `siteConfig` は読み取り専用。`press.config.tsx` で `site.name` に docs.json の `name` を渡す |
+| `interceptRootMeta`（テーマ CSS） | `head()` で `<style data-docs7-theme>` を返す |
+| `this.defaultLayoutProps` の上書き | `layoutProps()`。配列（`links`）は他の提供元と連結される |
+| `this.data['core:provider']` | `providerProps()` |
+| `this.data['core:*-layout']` の `tree` 差し替え | `configureLoader()` で Fumadocs のローダープラグインを追加し、`transformPageTree.root` で差し替え |
+
+ページツリーの差し替えで確認した挙動:
+
+- `parser: "dir"` の英語ツリーでは、ノードの `$ref` が言語ディレクトリを除いた `index.mdx` になる。
+  docs.json の `en/index` は `en/` を外しても照合する。
+- Fumadocs はメインのツリーに含まれないページ用のフォールバックツリーにも `root` 変換を適用する。
+  フォールバックは `options.generateFallback === false` で判別し、変換しない。
+- Fumapress 2 は Node.js 24 以上が必要（`package.json` の `engines` と `.node-version` は既に 24 系）。
+  `fumadocs-core` / Base UI 版 `fumadocs-ui` 16.18.3 以上、`fumadocs-mdx` 15.5.3 以上、React 19.3.1 以上、Vite 8.3.6 以上。
+- 既定プリセット（sitemap / robots / llms.txt / RSS / FlexSearch / Takumi OG 画像）は 1.x と同様に有効のまま。
+  `linkValidationPlugin()` はプリセット外なので `.plugins()` に残す。
+
+検証: Node 24.15.0 で `pnpm test`（20件）、`pnpm types:check`、`pnpm knip`、`pnpm build`（静的生成 43 ファイル）、
+`pnpm dev` で `/`・`/en/about`・`/blog` の 200 応答と英語サイドバーのリンクを確認。
+Studio と Docs7 プレビューはこの移行の範囲外（`content/` は変更していない）で、未確認。
