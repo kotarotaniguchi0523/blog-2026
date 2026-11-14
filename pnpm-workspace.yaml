@@ -8,3 +8,14 @@ minimumReleaseAgeExclude:
   - '@astrojs/react@7.1.9'
   - '@astrojs/vite-plugin-astro@0.1.3'
   - astro@7.4.12
+# Refuse a package version whose publish trust (trusted publisher / provenance) is
+# weaker than an earlier release of the same package.
+trustPolicy: no-downgrade
+peerDependencyRules:
+  allowedVersions:
+    # @fumapress/astro 0.1.0 declares ^0.2.1, but @fumadocs/astro 0.2.x needs
+    # @fumadocs/satteri 0.7, which imports createShowContext, removed in
+    # fumadocs-core 16.19.0. 0.3.0 (same release as 16.19.0) keeps the API that
+    # @fumapress/astro uses (default export, NoProcessedMarkdownError). Remove once
+    # @fumapress/astro accepts 0.3.
+    '@fumapress/astro>@fumadocs/astro': '0.3.0'

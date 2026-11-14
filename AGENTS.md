@@ -199,6 +199,10 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 - 移行前の `upm.lock` と `package-lock.json` は削除済み。再作成しない。
 - CLI はプロジェクトの依存としてインストールする。npx による実行は禁止し、pnpm scripts から `node` で直接呼び出す。
 - 依存のビルドスクリプトは内容を確認して `allowBuilds` で個別に許可・拒否する。
+- **依存のバージョンを下げない（ダウングレード禁止）。** 互換性の問題は、新しい版の組み合わせ、上流の修正、
+  または理由を書いた `peerDependencyRules` の例外で解決する。古い版への固定で回避しない。
+- `pnpm-workspace.yaml` の `trustPolicy: no-downgrade` で、公開時の信頼性（Trusted Publisher / provenance）が
+  過去の版より下がったパッケージのインストールを拒否する。例外は `trustPolicyExclude` に理由付きで個別に書く。
 
 ### その他
 

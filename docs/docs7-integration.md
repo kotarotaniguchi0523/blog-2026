@@ -242,9 +242,18 @@ Studio と Docs7 プレビューはこの移行の範囲外（`content/` は変�
 
 確認した挙動・制約:
 
-- `@fumadocs/satteri` 0.7.2（`@fumadocs/astro` 0.2.2 の依存）が `fumadocs-core/mdx-plugins/remark-show` の
-  `createShowContext` を import するが、fumadocs-core 16.19.0 には無く 16.18.4 にはある。そのため
-  `fumadocs-core` と `fumadocs-ui`（Base UI 版）を 16.18.4 に固定した。`@fumapress/astro` 0.1.0 は `@fumadocs/astro` ^0.2.1 を要求するため 0.3.0 は使えない。
+- fumadocs-core 16.19.0 は `fumadocs-core/mdx-plugins/remark-show` から `createShowContext` を削除した
+  （16.18.4 にはある。fuma-nama/fumadocs#3804 前後の変更とみられる）。`@fumadocs/astro` 0.2.x が使う
+  `@fumadocs/satteri` 0.7.x はこれを import するため、16.19.0 と組み合わせるとビルドが
+  「does not provide an export named 'createShowContext'」で失敗する。
+- 同じ日（2026-11-11）に公開された `@fumadocs/astro` 0.3.0 / `@fumadocs/satteri` 0.8.0 はこの関数を使わない。
+  一方 `@fumapress/astro` 0.1.0 の peer は `@fumadocs/astro` ^0.2.1 のままで、上流 main（`packages/astro/package.json`）も
+  ^0.2.2 だった。上流の issue は確認時点で見つからなかった。
+- ダウングレードはしない方針のため、fumadocs-core / Base UI 版 fumadocs-ui 16.19.0 と `@fumadocs/astro` 0.3.0 を使い、
+  peer の不一致は `pnpm-workspace.yaml` の `peerDependencyRules.allowedVersions` に理由付きで許可した。
+  `@fumapress/astro` が `@fumadocs/astro` から使うのは既定エクスポート（`fumadocs()`）と `NoProcessedMarkdownError` だけで、
+  0.3.0 にも同じ形で存在する。ビルド・開発サーバー・ブラウザでのハイドレーション（コンソールエラー 0）を確認した。
+  `@fumapress/astro` が 0.3 を受け入れたらこの例外を削除する。
 - `metaLoader()` は `content/` の `**/*.{json,yaml}` をすべて読むため、Docs7 の `docs.json` も Fumadocs の
   メタファイルとして渡ってしまう。`press.config.tsx` で `meta.json` だけに絞る。
 - MDX の本文は React の island になり、ブラウザでもハイドレートされる（コンポーネントの props はシリアライズ可能であること）。
