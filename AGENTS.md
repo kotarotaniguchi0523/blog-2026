@@ -40,7 +40,7 @@ Docs7 とローカルプレビューで同じ設定を共有する。
 - `config.ts`: docs.json の Zod スキーマ（意図的に「対応サブセットのみ」を許可）、ページツリー生成、テーマ CSS。
 - `plugin.ts`: テーマ色（`head`）・外観（`providerProps`）・ナビバー（`layoutProps`）・サイドバー
   （`configureLoader` で追加するローダープラグインの `transformPageTree.root`）の Fumapress 2 フックへの変換。
-  サイト名は Fumapress 2 ではプラグインから書き換えられないため、`press.config.tsx` が docs.json を読んで `site.name` に渡す。
+  サイト名は Fumapress 2 ではプラグインから書き換えられないため、`press.config.tsx` が docs.json を一度だけ読み、`site.name` と `docs7Plugin(config)` に渡す。
 - `mdx.ts` / `components.ts`: Docs7 の MDX コンポーネントを Fumadocs UI に変換。`mdx.ts` は
   `vite.config.ts` の `press({ components })` に渡すモジュール（相対リンクは Fumapress が解決する）。
 - `vite.ts`: docs.json の変更で開発サーバーを再起動する。

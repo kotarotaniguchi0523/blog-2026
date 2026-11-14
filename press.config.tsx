@@ -5,6 +5,9 @@ import { defineDocs } from "fumadocs-mdx/macro";
 import { docs7Plugin } from "./src/plugins/docs7/plugin";
 import { readDocs7Config } from "./src/plugins/docs7/config";
 
+// content/docs.json is the single source for the site name, theme and navigation.
+const docs7 = readDocs7Config();
+
 const docs = defineDocs({
   dir: "content",
   docs: {
@@ -28,12 +31,11 @@ export const app = createPress(docs.toFumadocsSource(), {
     parser: "dir",
     hideLocale: "default-locale",
   },
-}).plugins(docs7Plugin(), linkValidationPlugin());
+}).plugins(docs7Plugin(docs7), linkValidationPlugin());
 
 export default app.config({
   site: {
-    // content/docs.json is the single source for the site name.
-    name: readDocs7Config().name,
+    name: docs7.name,
     // Deployed URL, used by the sitemap, RSS and canonical links.
     baseUrl: "https://merino-dev.docs7.io",
   },

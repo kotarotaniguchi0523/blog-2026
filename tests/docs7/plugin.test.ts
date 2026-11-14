@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { Context } from 'fumapress';
 import type { Root } from 'fumadocs-core/page-tree';
 import { createDocs7PageTree, docs7NavbarLinks, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
-import { docs7PageTree, docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
+import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
 import { docs7Components } from '../../src/plugins/docs7/components.ts';
 
 const config = readDocs7Config();
@@ -96,48 +96,59 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.throws(() => parseDocs7Config({ ...config, seo: { indexing: 'sometimes' } }), /unsupported/);
   });
 
-  it('applies site title, navbar links, color metadata and provider appearance through v2 hooks', async () => {
-    const plugin = docs7Plugin();
+  it('applies navbar links, color metadata and provider appearance through v2 hooks', async () => {
+    const plugin = docs7Plugin(config);
     const context = {} as Context;
-    const head = await plugin.head?.call(context, { lang: undefined });
-    assert.deepEqual(head, [{ tag: 'style', attrs: { 'data-docs7-theme': '' }, children: docs7ThemeCss(config) }]);
-    const layout = await plugin.layoutProps?.call(context, { lang: undefined });
-    assert.equal(layout?.nav?.title, config.name);
-    const navbarLinks = docs7NavbarLinks(config, undefined).map((link) => ({
-      text: link.label, url: link.href, external: !link.href.startsWith('/'),
+    assert.deepEqual(await plugin.head?.call(context, { lang: undefined }),
+      [{ tag: 'style', attrs: { 'data-docs7-theme': '' }, children: docs7ThemeCss(config) }]);
+    const strict = docs7Plugin(parseDocs7Config({
+      ...config,
+      appearance: { default: 'dark', strict: true },
+      navbar: { links: [{ label: 'GitHub', href: 'https://github.com/kotarotaniguchi0523' }] },
+      navigation: { pages: ['index'] },
     }));
-    assert.deepEqual(layout?.links, navbarLinks.length ? navbarLinks : undefined);
-    const provider = await plugin.providerProps?.call(context, { lang: undefined });
-    assert.equal(provider?.theme?.defaultTheme, config.appearance?.default);
+    assert.deepEqual(await strict.layoutProps?.call(context, { lang: undefined }), {
+      links: [{ text: 'GitHub', url: 'https://github.com/kotarotaniguchi0523', external: true }],
+      themeSwitch: { enabled: false },
+    });
+    assert.deepEqual(await strict.providerProps?.call(context, { lang: undefined }),
+      { theme: { defaultTheme: 'dark', forcedTheme: 'dark' } });
   });
 
   it('replaces the generated page tree of each language through a loader plugin', async () => {
-    const plugin = docs7Plugin();
-    const result = await plugin.configureLoader?.call({} as Context, { baseUrl: '/' });
+    const result = await docs7Plugin(config).configureLoader?.call({} as Context, { baseUrl: '/' });
+    assert.equal(result?.pageTree?.generateFallback, false);
     const loaderPlugin = result?.plugins?.[0];
     const transform = loaderPlugin && !Array.isArray(loaderPlugin) ? loaderPlugin.transformPageTree?.root : undefined;
     assert.ok(transform);
+    const run = (locale: string | undefined, root: Root): Root =>
+      transform.call({ locale } as ThisParameterType<typeof transform>, root);
+    const toNode = (page: (typeof pages)[number]) =>
+      ({ type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path });
     // A generated tree in the shape Fumadocs builds: files and a folder, in file-system order.
     const generated = (list: typeof pages): Root => ({
       name: 'Generated',
       children: [
-        { type: 'folder', name: 'Nested', children: list.slice(2).map((page) => ({
-          type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path,
-        })) },
-        ...list.slice(0, 2).reverse().map((page) => ({
-          type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path,
-        })),
+        { type: 'folder', name: 'Nested', children: list.slice(2).map(toNode) },
+        ...list.slice(0, 2).reverse().map(toNode),
       ],
     });
     for (const locale of [undefined, 'en']) {
       const list = getPages(locale);
-      const tree: Root = transform.call({ locale, options: {} } as ThisParameterType<typeof transform>, generated(list));
-      assert.deepEqual(tree, createDocs7PageTree(config, list, locale));
-      assert.deepEqual(docs7PageTree(config, generated(list), locale), tree);
+      assert.deepEqual(run(locale, generated(list)), createDocs7PageTree(config, list, locale));
     }
-    // Fumadocs runs the same transformer on the fallback tree of unlisted pages; leave it alone.
-    const fallback: Root = { name: 'Fallback', children: [] };
-    assert.equal(transform.call({ options: { generateFallback: false } } as ThisParameterType<typeof transform>, fallback), fallback);
+    // The `dir` parser drops the language folder from `$ref`; docs.json keeps it (`en/index`).
+    const stripped = enPages.map((page) => ({ ...page, path: page.path.slice('en/'.length) }));
+    assert.equal(run('en', generated(stripped)).children.length, 4);
+  });
+
+  it('matches nested pages only by their full path', () => {
+    const nested = [...pages, { path: 'guides/setup.mdx', url: '/guides/setup', data: { title: 'Setup' } }];
+    const tree = (pagePath: string) => createDocs7PageTree(parseDocs7Config({
+      ...config, navigation: { pages: [pagePath] },
+    }), nested);
+    assert.equal(tree('guides/setup').children[0]?.type, 'page');
+    assert.throws(() => tree('setup'), /not found/);
   });
 });
 

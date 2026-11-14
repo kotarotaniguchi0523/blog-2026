@@ -115,12 +115,6 @@ export function docs7Languages(config: Docs7Config): string[] {
     : [];
 }
 
-/** Language treated as the source of truth, `undefined` for single-language sites. */
-export function docs7DefaultLanguage(config: Docs7Config): string | undefined {
-  if (!('languages' in config.navigation)) return undefined;
-  return config.navigation.languages.find((language) => language.default)?.language;
-}
-
 function languageEntryFor(config: Docs7Config, locale: string | undefined) {
   if (!('languages' in config.navigation)) return undefined;
   const languages = config.navigation.languages;
@@ -150,16 +144,15 @@ interface SourcePage {
 }
 
 export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[], locale?: string): Root {
-  // Docs7 lists translated pages with their language folder (`en/about`). Source
-  // paths may keep that prefix or drop it (the page tree of the `dir` parser
-  // does), so accept both forms.
-  const index = new Map<string, SourcePage>();
-  for (const page of pages) {
-    const key = page.path.replaceAll('\\', '/').replace(/\.(md|mdx)$/, '');
-    index.set(key, page);
-    const slash = key.indexOf('/');
-    if (slash > 0) index.set(key.slice(slash + 1), page);
-  }
+  // Docs7 lists translated pages with their language folder (`en/about`); source paths
+  // may keep that folder or drop it (the page tree of the `dir` parser does). Compare
+  // both sides without the extension and without this language's folder.
+  const prefix = locale ? `${locale}/` : undefined;
+  const normalize = (path: string) => {
+    const key = path.replaceAll('\\', '/').replace(/\.(md|mdx)$/, '');
+    return prefix && key.startsWith(prefix) ? key.slice(prefix.length) : key;
+  };
+  const index = new Map(pages.map((page) => [normalize(page.path), page]));
   const seen = new Set<string>();
   function entry(value: string | Docs7Group, position: string): Node {
     if (typeof value !== 'string') {
@@ -170,8 +163,7 @@ export function createDocs7PageTree(config: Docs7Config, pages: SourcePage[], lo
     }
     if (seen.has(value)) throw new Error(`[Docs7 plugin] Duplicate navigation page: ${value}`);
     seen.add(value);
-    const page = index.get(value)
-      ?? (locale && value.startsWith(`${locale}/`) ? index.get(value.slice(locale.length + 1)) : undefined);
+    const page = index.get(normalize(value));
     if (!page) throw new Error(`[Docs7 plugin] Navigation page not found: ${value}`);
     return { type: 'page', $id: `docs7:${value}`, $ref: page.path, name: page.data.title ?? value, url: page.url };
   }

@@ -19,7 +19,7 @@
 - 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
-Fumapress は `press.config.tsx` の `docs7Plugin()` と、`vite.config.ts` の
+Fumapress は `press.config.tsx` の `docs7Plugin(config)` と、`vite.config.ts` の
 `press({ components: "./src/plugins/docs7/mdx.ts" })` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
 生成ファイルのコピーやシンボリックリンクは使わない。
@@ -206,9 +206,9 @@ provenance の記録はない。CLI のソースはダウンロード時の SHA-
 ページツリーの差し替えで確認した挙動:
 
 - `parser: "dir"` の英語ツリーでは、ノードの `$ref` が言語ディレクトリを除いた `index.mdx` になる。
-  docs.json の `en/index` は `en/` を外しても照合する。
-- Fumadocs はメインのツリーに含まれないページ用のフォールバックツリーにも `root` 変換を適用する。
-  フォールバックは `options.generateFallback === false` で判別し、変換しない。
+  照合は両側から拡張子とその言語のディレクトリ（`en/`）を除いた完全なパスで行う（`setup` が `guides/setup` に一致しない）。
+- Fumadocs はメインのツリーに含まれないページ用のフォールバックツリーを同じ変換で生成する。
+  docs.json がサイドバーの全体なので、`configureLoader()` で `pageTree.generateFallback: false` を指定して生成しない。
 - Fumapress 2 は Node.js 24 以上が必要（`package.json` の `engines` と `.node-version` は既に 24 系）。
   `fumadocs-core` / Base UI 版 `fumadocs-ui` 16.18.3 以上、`fumadocs-mdx` 15.5.3 以上、React 19.3.1 以上、Vite 8.3.6 以上。
 - 既定プリセット（sitemap / robots / llms.txt / RSS / FlexSearch / Takumi OG 画像）は 1.x と同様に有効のまま。
