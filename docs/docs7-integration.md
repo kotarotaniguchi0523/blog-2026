@@ -19,7 +19,7 @@
 - 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
-Fumapress は `press.config.tsx` の `docs7Plugin(config)` と、`vite.config.ts` の
+Fumapress は `press.config.tsx` の `docs7Plugin(config)` と、`astro.config.mjs` の
 `press({ components: "./src/plugins/docs7/mdx.ts" })` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
 生成ファイルのコピーやシンボリックリンクは使わない。
@@ -223,3 +223,37 @@ provenance の記録はない。CLI のソースはダウンロード時の SHA-
 検証: Node 24.15.0 で `pnpm test`（20件）、`pnpm types:check`、`pnpm knip`、`pnpm build`（静的生成 43 ファイル）、
 `pnpm dev` で `/`・`/en/about`・`/blog` の 200 応答と英語サイドバーのリンクを確認。
 Studio と Docs7 プレビューはこの移行の範囲外（`content/` は変更していない）で、未確認。
+
+## Astro への移行
+
+確認日: 2026-11-14。[Fumapress on Astro](https://press.fumadocs.dev/docs/astro)、
+[手動インストール](https://press.fumadocs.dev/docs/astro/manual-installation)、[Content](https://press.fumadocs.dev/docs/astro/content)、
+`create-fumapress` 0.1.25 の Astro テンプレート、導入した `@fumapress/astro` 0.1.0 / `@fumadocs/astro` 0.2.2 の型定義とソースで確認。
+
+| Waku（`fumapress`） | Astro（`@fumapress/astro`） |
+| --- | --- |
+| `vite.config.ts` の `press({ components })` と `fumadocsMdx()` | `astro.config.mjs` の `press({ collections, components, lastModified, includeProcessedMarkdown })` |
+| `fumadocs-mdx/macro` の `defineDocs()` | `src/content.config.ts` の `pageLoader()` / `metaLoader()` と `toFumadocsSource()` |
+| `createPress` / `linkValidationPlugin` / 型（`fumapress`） | `@fumapress/astro/config` / `@fumapress/astro/plugins/link-validation` |
+| `site.baseUrl` | Astro の `site` |
+| `fumapress/css/preset.css` | `@fumapress/astro/css/preset.css`（`src/app.css` を Fumapress が読む） |
+| `docs7ConfigWatch()`（Vite の `server.restart()`） | Astro インテグレーションの `addWatchFile` |
+| `fumapress dev` / `build` / `start` | `astro dev` / `build` / `preview`。型検査は `astro sync` の後に `tsc` |
+
+確認した挙動・制約:
+
+- `@fumadocs/satteri` 0.7.2（`@fumadocs/astro` 0.2.2 の依存）が `fumadocs-core/mdx-plugins/remark-show` の
+  `createShowContext` を import するが、fumadocs-core 16.19.0 には無く 16.18.4 にはある。そのため
+  `fumadocs-core` と `fumadocs-ui`（Base UI 版）を 16.18.4 に固定した。`@fumapress/astro` 0.1.0 は `@fumadocs/astro` ^0.2.1 を要求するため 0.3.0 は使えない。
+- `metaLoader()` は `content/` の `**/*.{json,yaml}` をすべて読むため、Docs7 の `docs.json` も Fumadocs の
+  メタファイルとして渡ってしまう。`press.config.tsx` で `meta.json` だけに絞る。
+- MDX の本文は React の island になり、ブラウザでもハイドレートされる（コンポーネントの props はシリアライズ可能であること）。
+- Astro 7 の `astro dev` はエージェント環境ではバックグラウンドで起動し、ログは `astro dev logs`、停止は `astro dev stop`。
+- pnpm の `minimumReleaseAge` により、新しい Astro 関連パッケージは pnpm が `pnpm-workspace.yaml` の
+  `minimumReleaseAgeExclude` に追加した（`astro@7.4.12`、`@astrojs/react@7.1.9` など）。
+- Docs7 側は `content/` をそのまま読むため、この移行の影響を受けない。
+
+検証: Node 24.15.0 で `pnpm test`（21件）、`pnpm types:check`（`astro sync` + `tsc`）、`pnpm knip`、`pnpm build`（9ページ、
+`.md` / OG 画像 / sitemap / RSS / llms.txt / 言語別ページツリー JSON を生成）。`<html lang>` は `/en` 配下で `en` になった。
+`pnpm dev` で `/`・`/en`・`/en/about`・`/blog` の 200 応答、`docs.json` の変更でサーバーが再起動し `og:site_name` が更新されることを確認。
+Studio（`pnpm editor`）と Docs7 プレビューは未確認。

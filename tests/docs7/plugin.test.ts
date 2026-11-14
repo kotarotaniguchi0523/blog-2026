@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Context } from 'fumapress';
+import type { Context } from '@fumapress/astro/config';
 import type { Root } from 'fumadocs-core/page-tree';
 import { createDocs7PageTree, docs7NavbarLinks, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
 import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';

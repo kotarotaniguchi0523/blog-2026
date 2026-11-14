@@ -14,21 +14,24 @@
     "docs7:whoami": "node node_modules/@upstash/docs7/bin/docs7.mjs whoami",
     "docs7:login": "node node_modules/@upstash/docs7/bin/docs7.mjs login --no-browser",
     "docs7:preview": "node --env-file=docs7.env node_modules/@upstash/docs7/bin/docs7.mjs deploy content --preview",
-    "dev": "node node_modules/fumapress/cli.js dev",
+    "dev": "node node_modules/astro/bin/astro.mjs dev",
     "editor": "node node_modules/@fumadocs-editor/studio/dist/cli.js --config fumadocs-studio.config.ts",
-    "build": "node node_modules/fumapress/cli.js build",
-    "start": "node node_modules/fumapress/cli.js start",
-    "types:check": "node node_modules/typescript/bin/tsc --noEmit"
+    "build": "node node_modules/astro/bin/astro.mjs build",
+    "preview": "node node_modules/astro/bin/astro.mjs preview",
+    "types:check": "node node_modules/astro/bin/astro.mjs sync && node node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
+    "@astrojs/react": "^7.1.9",
+    "@fumadocs/astro": "^0.2.2",
+    "@fumapress/astro": "0.1.0",
     "@octokit/core": "7.0.8",
     "@octokit/plugin-paginate-rest": "16.0.0",
-    "fumadocs-core": "^16.19.0",
-    "fumadocs-mdx": "^15.6.1",
-    "fumadocs-ui": "npm:@fumadocs/base-ui@^16.19.0",
-    "fumapress": "2.0.2",
+    "astro": "^7.4.12",
+    "fumadocs-core": "16.18.4",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.18.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "takumi-js": "^2.20.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

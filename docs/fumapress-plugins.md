@@ -7,7 +7,7 @@
 
 ## 導入済み
 
-- **Link Validation**: `fumapress/plugins/link-validation` の `linkValidationPlugin()`。
+- **Link Validation**: `@fumapress/astro/plugins/link-validation` の `linkValidationPlugin()`（Astro 移行前は `fumapress/plugins/link-validation`）。
   静的ビルドでレンダリングした Fumapress `Link` の内部404を検出し、ビルドを失敗させる。
   外部リンク検査は別途 `externalLink` コールバックが必要。直接記述した HTML の `<a>` は収集対象ではない。
   `#` アンカーと `mailto:` はスキップされる。Docs7 のビルドで自動実行されるものではない。

@@ -1,4 +1,4 @@
-import type { AppShape, HeadTag, Plugin, ProviderProps } from 'fumapress';
+import type { AppShape, HeadTag, Plugin, ProviderProps } from '@fumapress/astro/config';
 import { flattenTree, type Root } from 'fumadocs-core/page-tree';
 import { createDocs7PageTree, docs7Languages, docs7NavbarLinks, docs7ThemeCss, type Docs7Config } from './config.ts';
 

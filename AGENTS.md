@@ -4,7 +4,7 @@
 
 個人ブログ用の公開 GitHub リポジトリ(`blog-2026`)です。
 
-- **フレームワーク**: [Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)。Vite + React + TypeScript で動作します。
+- **フレームワーク**: [Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)を `@fumapress/astro` で Astro 上に載せています。React + TypeScript。
 - **コンテンツ**: リポジトリ内の MDX ファイルを基本とし、将来的には GitHub Issues もコンテンツの入力として取り込む予定です。
 - **ホスティング**: Docs7(Upstash / Context7)を想定しています。Docs7 は Mintlify 互換で、`content/docs.json` と MDX を読み取り、`pnpm docs7:dev` でポート 3333 上に起動します。デプロイは `main` ブランチから行い、各プルリクエストにはプレビューが作成されます。
 
@@ -42,8 +42,9 @@ Docs7 とローカルプレビューで同じ設定を共有する。
   （`configureLoader` で追加するローダープラグインの `transformPageTree.root`）の Fumapress 2 フックへの変換。
   サイト名は Fumapress 2 ではプラグインから書き換えられないため、`press.config.tsx` が docs.json を一度だけ読み、`site.name` と `docs7Plugin(config)` に渡す。
 - `mdx.ts` / `components.ts`: Docs7 の MDX コンポーネントを Fumadocs UI に変換。`mdx.ts` は
-  `vite.config.ts` の `press({ components })` に渡すモジュール（相対リンクは Fumapress が解決する）。
-- `vite.ts`: docs.json の変更で開発サーバーを再起動する。
+  `astro.config.mjs` の `press({ components })` に渡すモジュール（相対リンクは Fumapress が解決する）。
+  本文は React の island としてブラウザでも描画されるため、props はシリアライズ可能に保ち、サーバー専用コードを import しない。
+- `astro.ts`: docs.json の変更で開発サーバーを再起動する Astro インテグレーション（`addWatchFile`）。
 
 対応する設定: `name` / `theme` / `colors` / `appearance` / `icons.library` / `seo.indexing` /
 `contextual.options` / `navbar.links` / `navigation.{groups,pages,languages}`。
@@ -173,10 +174,11 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 
 | 目的 | コマンド |
 | --- | --- |
-| Fumapress 開発サーバー | `pnpm dev` |
+| Fumapress 開発サーバー（Astro、4321） | `pnpm dev`（Astro 7 はエージェント環境ではバックグラウンドで起動する。`node node_modules/astro/bin/astro.mjs dev logs` / `dev stop`） |
 | Docs7 プレビュー（公開と同じ見た目、3333） | `pnpm docs7:dev` |
 | Studio（編集、5180） | `pnpm editor` |
-| 静的ビルド | `pnpm build` |
+| 静的ビルド（`dist/`） | `pnpm build` |
+| ビルド結果の確認 | `pnpm preview` |
 | テスト | `pnpm test` |
 | 型検査 | `pnpm types:check` |
 | 未使用検出 | `pnpm knip` |
@@ -186,7 +188,7 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 このディレクトリは Windows のバインドマウント上にあり、**シンボリックリンクを作成できません**。そのため:
 
 - シンボリックリンクを前提とする依存配置を使用しないこと。パッケージマネージャーは以下の指定に従う。
-- npm scripts は `node_modules/.bin` に依存しないこと。CLI は `node` でエントリファイルを直接呼び出す(例: `node node_modules/fumapress/cli.js dev`)。
+- npm scripts は `node_modules/.bin` に依存しないこと。CLI は `node` でエントリファイルを直接呼び出す(例: `node node_modules/astro/bin/astro.mjs dev`)。
 
 ### パッケージマネージャー
 
