@@ -4,7 +4,7 @@
 
 個人ブログ用の公開 GitHub リポジトリ(`blog-2026`)です。
 
-- **フレームワーク**: [Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)。Vite + React + TypeScript で動作します。
+- **フレームワーク**: [Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)を `@fumapress/astro` で Astro 上に載せています。React + TypeScript。
 - **コンテンツ**: リポジトリ内の MDX ファイルを基本とし、将来的には GitHub Issues もコンテンツの入力として取り込む予定です。
 - **ホスティング**: Docs7(Upstash / Context7)を想定しています。Docs7 は Mintlify 互換で、`content/docs.json` と MDX を読み取り、`pnpm docs7:dev` でポート 3333 上に起動します。デプロイは `main` ブランチから行い、各プルリクエストにはプレビューが作成されます。
 
@@ -38,9 +38,13 @@
 Docs7 とローカルプレビューで同じ設定を共有する。
 
 - `config.ts`: docs.json の Zod スキーマ（意図的に「対応サブセットのみ」を許可）、ページツリー生成、テーマ CSS。
-- `plugin.ts`: サイト名・テーマ色・外観・サイドバー・ナビバーの Fumapress フックへの変換。
-- `adapter.ts` / `components.ts`: Docs7 の MDX コンポーネントを Fumadocs UI に変換。
-- `vite.ts`: docs.json の変更で開発サーバーを再起動する。
+- `plugin.ts`: テーマ色（`head`）・外観（`providerProps`）・ナビバー（`layoutProps`）・サイドバー
+  （`configureLoader` で追加するローダープラグインの `transformPageTree.root`）の Fumapress 2 フックへの変換。
+  サイト名は Fumapress 2 ではプラグインから書き換えられないため、`press.config.tsx` が docs.json を一度だけ読み、`site.name` と `docs7Plugin(config)` に渡す。
+- `mdx.ts` / `components.ts`: Docs7 の MDX コンポーネントを Fumadocs UI に変換。`mdx.ts` は
+  `astro.config.mjs` の `press({ components })` に渡すモジュール（相対リンクは Fumapress が解決する）。
+  本文は React の island としてブラウザでも描画されるため、props はシリアライズ可能に保ち、サーバー専用コードを import しない。
+- `astro.ts`: docs.json の変更で開発サーバーを再起動する Astro インテグレーション（`addWatchFile`）。
 
 対応する設定: `name` / `theme` / `colors` / `appearance` / `icons.library` / `seo.indexing` /
 `contextual.options` / `navbar.links` / `navigation.{groups,pages,languages}`。
@@ -170,10 +174,11 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 
 | 目的 | コマンド |
 | --- | --- |
-| Fumapress 開発サーバー | `pnpm dev` |
+| Fumapress 開発サーバー（Astro、4321） | `pnpm dev`（Astro 7 はエージェント環境ではバックグラウンドで起動する。`node node_modules/astro/bin/astro.mjs dev logs` / `dev stop`） |
 | Docs7 プレビュー（公開と同じ見た目、3333） | `pnpm docs7:dev` |
 | Studio（編集、5180） | `pnpm editor` |
-| 静的ビルド | `pnpm build` |
+| 静的ビルド（`dist/`） | `pnpm build` |
+| ビルド結果の確認 | `pnpm preview` |
 | テスト | `pnpm test` |
 | 型検査 | `pnpm types:check` |
 | 未使用検出 | `pnpm knip` |
@@ -183,7 +188,7 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 このディレクトリは Windows のバインドマウント上にあり、**シンボリックリンクを作成できません**。そのため:
 
 - シンボリックリンクを前提とする依存配置を使用しないこと。パッケージマネージャーは以下の指定に従う。
-- npm scripts は `node_modules/.bin` に依存しないこと。CLI は `node` でエントリファイルを直接呼び出す(例: `node node_modules/fumapress/cli.js dev`)。
+- npm scripts は `node_modules/.bin` に依存しないこと。CLI は `node` でエントリファイルを直接呼び出す(例: `node node_modules/astro/bin/astro.mjs dev`)。
 
 ### パッケージマネージャー
 
@@ -194,6 +199,10 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 - 移行前の `upm.lock` と `package-lock.json` は削除済み。再作成しない。
 - CLI はプロジェクトの依存としてインストールする。npx による実行は禁止し、pnpm scripts から `node` で直接呼び出す。
 - 依存のビルドスクリプトは内容を確認して `allowBuilds` で個別に許可・拒否する。
+- **依存のバージョンを下げない（ダウングレード禁止）。** 互換性の問題は、新しい版の組み合わせ、上流の修正、
+  または理由を書いた `peerDependencyRules` の例外で解決する。古い版への固定で回避しない。
+- `pnpm-workspace.yaml` の `trustPolicy: no-downgrade` で、公開時の信頼性（Trusted Publisher / provenance）が
+  過去の版より下がったパッケージのインストールを拒否する。例外は `trustPolicyExclude` に理由付きで個別に書く。
 
 ### その他
 

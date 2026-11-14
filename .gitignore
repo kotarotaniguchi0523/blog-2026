@@ -4,8 +4,7 @@
 .env
 .env.local
 dist
-.source
-src/pages.gen.ts
+.astro
 
 # Docs7 keeps local site-link metadata here. Never upload it as content.
 /content/.docs7/

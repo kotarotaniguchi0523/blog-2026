@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { AppContext } from 'fumapress';
+import type { Context } from '@fumapress/astro/config';
+import type { Root } from 'fumadocs-core/page-tree';
 import { createDocs7PageTree, docs7NavbarLinks, docs7ThemeCss, parseDocs7Config, readDocs7Config } from '../../src/plugins/docs7/config.ts';
 import { docs7Plugin } from '../../src/plugins/docs7/plugin.ts';
 import { docs7Components } from '../../src/plugins/docs7/components.ts';
@@ -76,7 +77,7 @@ describe('Docs7 configuration and Fumapress plugin', () => {
   it('builds one page tree per language and requires a single default', () => {
     const languages = parseDocs7Config({ ...config, navigation: { languages: [
       { language: 'ja', default: true, navbar: { links: [{ label: 'Blog', href: '/blog' }] }, pages: ['index', 'about'] },
-      { language: 'en', navbar: { links: [{ label: 'Blog', href: '/en/blog' }] }, pages: ['index'] },
+      { language: 'en', navbar: { links: [{ label: 'Blog', href: '/en/blog' }] }, pages: ['en/index'] },
     ] } });
     assert.equal(createDocs7PageTree(languages, pages).children.length, 2);
     assert.equal(createDocs7PageTree(languages, pages, 'en').children.length, 1);
@@ -95,54 +96,78 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     assert.throws(() => parseDocs7Config({ ...config, seo: { indexing: 'sometimes' } }), /unsupported/);
   });
 
-  it('adds navbar links once, even when a layout already links the same URL', async () => {
-    const context = {
-      siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages }),
-      defaultLayoutProps: async () => ({ links: [{ text: 'Blog', url: '/blog' }] }),
-      interceptRootMeta: () => {},
-    } as unknown as AppContext;
-    const plugin = docs7Plugin();
-    await plugin.init?.call(context);
-    const layout = await context.defaultLayoutProps({ lang: undefined });
-    const urls = (layout.links ?? []).flatMap((item) => ('url' in item && typeof item.url === 'string' ? [item.url] : []));
-    assert.equal(new Set(urls).size, urls.length);
-    assert.deepEqual(urls, [
-      '/blog',
-      ...docs7NavbarLinks(config, undefined).map((link) => link.href).filter((href) => href !== '/blog'),
-    ]);
+  it('applies navbar links, color metadata and provider appearance through v2 hooks', async () => {
+    const context = {} as Context;
+    // The real content/docs.json: system appearance, no navbar links.
+    const plugin = docs7Plugin(config);
+    assert.deepEqual(await plugin.head?.call(context, { lang: undefined }),
+      [{ tag: 'style', attrs: { 'data-docs7-theme': '' }, children: docs7ThemeCss(config) }]);
+    assert.deepEqual(await plugin.layoutProps?.call(context, { lang: 'en' }), {});
+    assert.deepEqual(await plugin.providerProps?.call(context, { lang: undefined }),
+      { theme: { defaultTheme: 'system', forcedTheme: undefined } });
+    const strict = docs7Plugin(parseDocs7Config({
+      ...config,
+      appearance: { default: 'dark', strict: true },
+      navbar: { links: [{ label: 'GitHub', href: 'https://github.com/kotarotaniguchi0523' }] },
+      navigation: { pages: ['index'] },
+    }));
+    assert.deepEqual(await strict.layoutProps?.call(context, { lang: undefined }), {
+      links: [{ text: 'GitHub', url: 'https://github.com/kotarotaniguchi0523', external: true }],
+      themeSwitch: { enabled: false },
+    });
+    assert.deepEqual(await strict.providerProps?.call(context, { lang: undefined }),
+      { theme: { defaultTheme: 'dark', forcedTheme: 'dark' } });
   });
 
-  it('applies site title, color metadata, provider appearance, and sidebar through real hooks', async () => {
-    const context = {
-      siteConfig: { name: 'Before' }, data: {},
-      getLoader: () => ({ getPages }),
-      defaultLayoutProps: async () => ({ nav: { title: 'Before' }, links: [{ text: 'Keep me', url: '/keep' }] }),
-      interceptRootMeta: (hook: { (env: { next: () => null }): unknown }) => {
-        const markup = renderToStaticMarkup(hook({ next: () => null }) as ReturnType<typeof createElement>);
-        assert.match(markup, /data-docs7-theme/);
-        assert.ok(markup.includes(docs7ThemeCss(config)));
-      },
-    } as unknown as AppContext;
-    const plugin = docs7Plugin();
-    await plugin.init?.call(context);
-    await plugin.configure?.call(context);
-    assert.equal(context.siteConfig.name, config.name);
-    const layout = await context.defaultLayoutProps({ lang: undefined });
-    assert.equal(layout.nav?.title, config.name);
-    assert.deepEqual(layout.links, [
-      { text: 'Keep me', url: '/keep' },
-      ...docs7NavbarLinks(config, undefined).map((link) => ({
-        text: link.label, url: link.href, external: !link.href.startsWith('/'),
-      })),
-    ]);
-    const provider = context.data['core:provider']?.transformers?.[0];
-    assert.equal((await provider?.({}))?.theme?.defaultTheme, 'system');
-    const transform = context.data['core:docs-layout']?.transformers?.[0];
+  it('replaces the generated page tree of each language through a loader plugin', async () => {
+    const result = await docs7Plugin(config).configureLoader?.call({} as Context, { baseUrl: '/' });
+    const loaderPlugin = result?.plugins?.[0];
+    const transform = loaderPlugin && !Array.isArray(loaderPlugin) ? loaderPlugin.transformPageTree?.root : undefined;
     assert.ok(transform);
-    const data = { body: null, layoutProps: { tree: { name: 'Old', children: [] } }, pageProps: {} };
-    const output = await transform({ data, page: { ...pages[0]!, type: 'page', slugs: [], locale: undefined } });
-    assert.deepEqual(output.layoutProps.tree, createDocs7PageTree(config, pages));
+    const run = (locale: string | undefined, root: Root, options = {}): Root =>
+      transform.call({ locale, options } as ThisParameterType<typeof transform>, root);
+    const toNode = (page: (typeof pages)[number]) =>
+      ({ type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path });
+    // A generated tree in the shape Fumadocs builds: files and a folder, in file-system order.
+    const generated = (list: typeof pages): Root => ({
+      name: 'Generated',
+      children: [
+        { type: 'folder', name: 'Nested', children: list.slice(2).map(toNode) },
+        ...list.slice(0, 2).reverse().map(toNode),
+      ],
+    });
+    for (const locale of [undefined, 'en']) {
+      const list = getPages(locale);
+      const tree = run(locale, generated(list));
+      // `compatibility` is not in docs.json: it stays reachable through the fallback tree.
+      const { fallback, ...listed } = tree;
+      assert.deepEqual(listed, createDocs7PageTree(config, list, locale));
+      assert.deepEqual(fallback?.children, list.filter((page) => page.path.endsWith('compatibility.mdx')).map(toNode));
+    }
+    // The `dir` parser drops the language folder from `$ref`; docs.json keeps it (`en/about`).
+    const stripped = enPages.map((page) => ({ ...page, path: page.path.slice('en/'.length) }));
+    const about = run('en', generated(stripped)).children[1];
+    assert.deepEqual(about, { type: 'page', $id: 'docs7:en/about', $ref: 'about.mdx', name: 'Profile', url: '/en/about' });
+    // Fumadocs' own fallback tree runs the same transformers; it is left as built.
+    const own: Root = { name: 'Fallback', children: [] };
+    assert.equal(run('en', own, { generateFallback: false, idPrefix: 'fallback:en' }), own);
+  });
+
+  it('matches navigation entries by their full path, once each', () => {
+    const tree = (list: typeof pages, entries: string[], locale?: string) => createDocs7PageTree(parseDocs7Config({
+      ...config, navigation: { languages: [
+        { language: 'ja', default: true, pages: locale ? ['index'] : entries },
+        { language: 'en', pages: locale ? entries : ['en/index'] },
+      ] },
+    }), list, locale);
+    const nested = [...pages, { path: 'guides/setup.mdx', url: '/guides/setup', data: { title: 'Setup' } }];
+    assert.equal(tree(nested, ['guides/setup']).children[0]?.type, 'page');
+    assert.throws(() => tree(nested, ['setup']), /not found/);
+    // Non-default languages keep their folder, as Docs7 requires.
+    assert.throws(() => tree(enPages, ['about'], 'en'), /must start with en\//);
+    assert.throws(() => tree(enPages, ['en/about', 'en/about'], 'en'), /Duplicate/);
+    // Two source files resolving to one entry would make the link ambiguous.
+    assert.throws(() => tree([...enPages, { ...enPages[1]!, path: 'about.mdx' }], ['en/about'], 'en'), /both resolve to about/);
   });
 });
 

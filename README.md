@@ -1,6 +1,6 @@
 # blog-2026
 
-個人ブログです。[Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク、Vite + React)で構築しています。ホスティングは Docs7(Upstash / Context7、Mintlify 互換)を想定しています。
+個人ブログです。[Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)を Astro 上で動かして構築しています。ホスティングは Docs7(Upstash / Context7、Mintlify 互換)を想定しています。
 
 ## 必要なもの
 
@@ -148,7 +148,8 @@ Scrap の公開処理・UI はまだ未実装です。
 │   └── en/           # 英語（同じファイル名で対応させる）
 ├── src/              # アプリケーションソース(src/app.css など)
 ├── press.config.tsx  # Fumapress の設定
-├── vite.config.ts    # Vite の設定
+├── astro.config.mjs  # Astro の設定（Fumapress インテグレーション）
+├── src/content.config.ts # Astro のコンテンツコレクション
 ├── tsconfig.json     # TypeScript の設定
 ├── AGENTS.md         # AI エージェント向けの開発ドキュメント
 └── README.md

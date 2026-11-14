@@ -1,12 +1,14 @@
 {
   "$schema": "./node_modules/knip/schema-jsonc.json",
-  // Fumapress loads press.config.tsx and src/app.css through virtual modules.
+  // Fumapress loads press.config.tsx, src/app.css and the MDX components module
+  // (`press({ components })` in astro.config.mjs) through virtual modules.
   // All other application modules must be reachable from these or from tests.
   "entry": [
     "press.config.tsx",
     "fumadocs-studio.config.ts",
     "studio/style.css",
     "src/app.css",
+    "src/plugins/docs7/mdx.ts",
     "tests/**/*.test.ts"
   ]
 }

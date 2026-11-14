@@ -5,7 +5,9 @@
 ## 構成
 
 `src/plugins/docs7/` はこのリポジトリ独自のローカルプラグイン。
-`@fumapress/mintlify` の設定読み込み、`PressPlugin.init`、レイアウト変換の設計を参考にした。
+`@fumapress/mintlify` の設定読み込みとレイアウト変換の設計を参考にした（Fumapress 1.x 時点）。
+2026-11-14 に Fumapress 2.0.2 へ移行し、`Plugin` の `head` / `layoutProps` / `providerProps` /
+`configureLoader` フックへ書き換えた（後述「Fumapress 2 への移行」）。
 同パッケージは依存として追加していない。
 
 原本は一つだけ持つ:
@@ -17,7 +19,8 @@
 - 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
   Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
 
-Fumapress は `press.config.tsx` の `docs7Plugin()` と `docs7Mdx()` を通して読む。
+Fumapress は `press.config.tsx` の `docs7Plugin(config)` と、`astro.config.mjs` の
+`press({ components: "./src/plugins/docs7/mdx.ts" })` を通して読む。
 Docs7 は `content/` をプロジェクトルートとして、そのまま読む。
 生成ファイルのコピーやシンボリックリンクは使わない。
 Docs7 レンダラー 0.1.61 がコンテンツ内の CSS を収集し、`style.css` を優先して
@@ -180,3 +183,86 @@ provenance の記録はない。CLI のソースはダウンロード時の SHA-
 - [Docs7 configuration](https://context7.com/docs/docs7/configuration)
 - [Docs7 component documentation source](https://github.com/upstash/context7/tree/master/docs/docs7/components)
 - [採用した Docs7 CLI の公開記録](https://registry.npmjs.org/@upstash/docs7/0.1.12)
+
+## Fumapress 2 への移行
+
+確認日: 2026-11-14。[公式の移行ガイド](https://press.fumadocs.dev/docs/migrate/v2)、
+[リリースノート](https://github.com/fuma-nama/fumapress/releases)、導入した `fumapress` 2.0.2 /
+`@fumapress/core` の型定義と配布ソースで確認。
+
+| 1.x | 2.0（このリポジトリでの対応） |
+| --- | --- |
+| `defineConfig({ content, i18n, ... })` | `createPress(content, { i18n }).plugins(...)` → `app.config({ site, head })` |
+| `.adapters(docs7Mdx())`、`createRelativeLink()` | `press({ components })` に MDX コンポーネントのモジュールを渡す。相対リンクは Fumapress が解決 |
+| `fumapress/adapters/mdx/schema` | `fumapress/schema` |
+| `meta.root()`（JSX） | `head`（`{ tag, attrs }` の配列。属性は HTML 名 `crossorigin`） |
+| `PressPlugin` / `AppContext` | `Plugin` / `Context` |
+| `this.siteConfig.name = ...` | `siteConfig` は読み取り専用。`press.config.tsx` で `site.name` に docs.json の `name` を渡す |
+| `interceptRootMeta`（テーマ CSS） | `head()` で `<style data-docs7-theme>` を返す |
+| `this.defaultLayoutProps` の上書き | `layoutProps()`。配列（`links`）は他の提供元と連結される |
+| `this.data['core:provider']` | `providerProps()` |
+| `this.data['core:*-layout']` の `tree` 差し替え | `configureLoader()` で Fumadocs のローダープラグインを追加し、`transformPageTree.root` で差し替え |
+
+ページツリーの差し替えで確認した挙動:
+
+- `parser: "dir"` の英語ツリーでは、ノードの `$ref` が言語ディレクトリを除いた `index.mdx` になる。
+  照合は両側から拡張子とその言語のディレクトリ（`en/`）を除いた完全なパスで行う（`setup` が `guides/setup` に一致しない）。
+  既定言語以外の docs.json の値は `en/` から始まらなければ例外（Docs7 の仕様に合わせる）。
+  同じページを指す重複指定と、同じパスに解決される2つのソースも例外にする。
+- docs.json に載っていないページは、差し替えたツリーの `fallback` に残す。Fumadocs UI は `fallback` から
+  現在ページのサイドバー範囲と前後ページを探すため（`fumadocs-ui/dist/contexts/tree.js`）。
+- Fumadocs は変換後に独自の `fallback`（生成ツリーが使わなかったページ）を代入して上書きするため、
+  `configureLoader()` で `pageTree.generateFallback: false` を返す。ただし Fumapress core は `createPress()` が
+  同じキーを設定すると、プラグインの値を黙って無視する。その場合に備え、変換は Fumadocs 独自の
+  フォールバック（`generateFallback: false` かつ `idPrefix` が `fallback`）をそのまま返す。
+- Fumapress 2 は Node.js 24 以上が必要（`package.json` の `engines` と `.node-version` は既に 24 系）。
+  `fumadocs-core` / Base UI 版 `fumadocs-ui` 16.18.3 以上、`fumadocs-mdx` 15.5.3 以上、React 19.3.1 以上、Vite 8.3.6 以上。
+- 既定プリセット（sitemap / robots / llms.txt / RSS / FlexSearch / Takumi OG 画像）は 1.x と同様に有効のまま。
+  `linkValidationPlugin()` はプリセット外なので `.plugins()` に残す。
+
+検証: Node 24.15.0 で `pnpm test`（20件）、`pnpm types:check`、`pnpm knip`、`pnpm build`（静的生成 43 ファイル）、
+`pnpm dev` で `/`・`/en/about`・`/blog` の 200 応答と英語サイドバーのリンクを確認。
+Studio と Docs7 プレビューはこの移行の範囲外（`content/` は変更していない）で、未確認。
+
+## Astro への移行
+
+確認日: 2026-11-14。[Fumapress on Astro](https://press.fumadocs.dev/docs/astro)、
+[手動インストール](https://press.fumadocs.dev/docs/astro/manual-installation)、[Content](https://press.fumadocs.dev/docs/astro/content)、
+`create-fumapress` 0.1.25 の Astro テンプレート、導入した `@fumapress/astro` 0.1.0 / `@fumadocs/astro` 0.2.2 の型定義とソースで確認。
+
+| Waku（`fumapress`） | Astro（`@fumapress/astro`） |
+| --- | --- |
+| `vite.config.ts` の `press({ components })` と `fumadocsMdx()` | `astro.config.mjs` の `press({ collections, components, lastModified, includeProcessedMarkdown })` |
+| `fumadocs-mdx/macro` の `defineDocs()` | `src/content.config.ts` の `pageLoader()` / `metaLoader()` と `toFumadocsSource()` |
+| `createPress` / `linkValidationPlugin` / 型（`fumapress`） | `@fumapress/astro/config` / `@fumapress/astro/plugins/link-validation` |
+| `site.baseUrl` | Astro の `site` |
+| `fumapress/css/preset.css` | `@fumapress/astro/css/preset.css`（`src/app.css` を Fumapress が読む） |
+| `docs7ConfigWatch()`（Vite の `server.restart()`） | Astro インテグレーションの `addWatchFile` |
+| `fumapress dev` / `build` / `start` | `astro dev` / `build` / `preview`。型検査は `astro sync` の後に `tsc` |
+
+確認した挙動・制約:
+
+- fumadocs-core 16.19.0 は `fumadocs-core/mdx-plugins/remark-show` から `createShowContext` を削除した
+  （16.18.4 にはある。fuma-nama/fumadocs#3804 前後の変更とみられる）。`@fumadocs/astro` 0.2.x が使う
+  `@fumadocs/satteri` 0.7.x はこれを import するため、16.19.0 と組み合わせるとビルドが
+  「does not provide an export named 'createShowContext'」で失敗する。
+- 同じ日（2026-11-11）に公開された `@fumadocs/astro` 0.3.0 / `@fumadocs/satteri` 0.8.0 はこの関数を使わない。
+  一方 `@fumapress/astro` 0.1.0 の peer は `@fumadocs/astro` ^0.2.1 のままで、上流 main（`packages/astro/package.json`）も
+  ^0.2.2 だった。上流の issue は確認時点で見つからなかった。
+- ダウングレードはしない方針のため、fumadocs-core / Base UI 版 fumadocs-ui 16.19.0 と `@fumadocs/astro` 0.3.0 を使い、
+  peer の不一致は `pnpm-workspace.yaml` の `peerDependencyRules.allowedVersions` に理由付きで許可した。
+  `@fumapress/astro` が `@fumadocs/astro` から使うのは既定エクスポート（`fumadocs()`）と `NoProcessedMarkdownError` だけで、
+  0.3.0 にも同じ形で存在する。ビルド・開発サーバー・ブラウザでのハイドレーション（コンソールエラー 0）を確認した。
+  `@fumapress/astro` が 0.3 を受け入れたらこの例外を削除する。
+- `metaLoader()` は `content/` の `**/*.{json,yaml}` をすべて読むため、Docs7 の `docs.json` も Fumadocs の
+  メタファイルとして渡ってしまう。`press.config.tsx` で `meta.json` だけに絞る。
+- MDX の本文は React の island になり、ブラウザでもハイドレートされる（コンポーネントの props はシリアライズ可能であること）。
+- Astro 7 の `astro dev` はエージェント環境ではバックグラウンドで起動し、ログは `astro dev logs`、停止は `astro dev stop`。
+- pnpm の `minimumReleaseAge` により、新しい Astro 関連パッケージは pnpm が `pnpm-workspace.yaml` の
+  `minimumReleaseAgeExclude` に追加した（`astro@7.4.12`、`@astrojs/react@7.1.9` など）。
+- Docs7 側は `content/` をそのまま読むため、この移行の影響を受けない。
+
+検証: Node 24.15.0 で `pnpm test`（21件）、`pnpm types:check`（`astro sync` + `tsc`）、`pnpm knip`、`pnpm build`（9ページ、
+`.md` / OG 画像 / sitemap / RSS / llms.txt / 言語別ページツリー JSON を生成）。`<html lang>` は `/en` 配下で `en` になった。
+`pnpm dev` で `/`・`/en`・`/en/about`・`/blog` の 200 応答、`docs.json` の変更でサーバーが再起動し `og:site_name` が更新されることを確認。
+Studio（`pnpm editor`）と Docs7 プレビューは未確認。
