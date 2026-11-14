@@ -77,7 +77,7 @@ describe('Docs7 configuration and Fumapress plugin', () => {
   it('builds one page tree per language and requires a single default', () => {
     const languages = parseDocs7Config({ ...config, navigation: { languages: [
       { language: 'ja', default: true, navbar: { links: [{ label: 'Blog', href: '/blog' }] }, pages: ['index', 'about'] },
-      { language: 'en', navbar: { links: [{ label: 'Blog', href: '/en/blog' }] }, pages: ['index'] },
+      { language: 'en', navbar: { links: [{ label: 'Blog', href: '/en/blog' }] }, pages: ['en/index'] },
     ] } });
     assert.equal(createDocs7PageTree(languages, pages).children.length, 2);
     assert.equal(createDocs7PageTree(languages, pages, 'en').children.length, 1);
@@ -97,10 +97,14 @@ describe('Docs7 configuration and Fumapress plugin', () => {
   });
 
   it('applies navbar links, color metadata and provider appearance through v2 hooks', async () => {
-    const plugin = docs7Plugin(config);
     const context = {} as Context;
+    // The real content/docs.json: system appearance, no navbar links.
+    const plugin = docs7Plugin(config);
     assert.deepEqual(await plugin.head?.call(context, { lang: undefined }),
       [{ tag: 'style', attrs: { 'data-docs7-theme': '' }, children: docs7ThemeCss(config) }]);
+    assert.deepEqual(await plugin.layoutProps?.call(context, { lang: 'en' }), {});
+    assert.deepEqual(await plugin.providerProps?.call(context, { lang: undefined }),
+      { theme: { defaultTheme: 'system', forcedTheme: undefined } });
     const strict = docs7Plugin(parseDocs7Config({
       ...config,
       appearance: { default: 'dark', strict: true },
@@ -117,12 +121,11 @@ describe('Docs7 configuration and Fumapress plugin', () => {
 
   it('replaces the generated page tree of each language through a loader plugin', async () => {
     const result = await docs7Plugin(config).configureLoader?.call({} as Context, { baseUrl: '/' });
-    assert.equal(result?.pageTree?.generateFallback, false);
     const loaderPlugin = result?.plugins?.[0];
     const transform = loaderPlugin && !Array.isArray(loaderPlugin) ? loaderPlugin.transformPageTree?.root : undefined;
     assert.ok(transform);
-    const run = (locale: string | undefined, root: Root): Root =>
-      transform.call({ locale } as ThisParameterType<typeof transform>, root);
+    const run = (locale: string | undefined, root: Root, options = {}): Root =>
+      transform.call({ locale, options } as ThisParameterType<typeof transform>, root);
     const toNode = (page: (typeof pages)[number]) =>
       ({ type: 'page' as const, name: page.data.title, url: page.url, $ref: page.path });
     // A generated tree in the shape Fumadocs builds: files and a folder, in file-system order.
@@ -135,20 +138,36 @@ describe('Docs7 configuration and Fumapress plugin', () => {
     });
     for (const locale of [undefined, 'en']) {
       const list = getPages(locale);
-      assert.deepEqual(run(locale, generated(list)), createDocs7PageTree(config, list, locale));
+      const tree = run(locale, generated(list));
+      // `compatibility` is not in docs.json: it stays reachable through the fallback tree.
+      const { fallback, ...listed } = tree;
+      assert.deepEqual(listed, createDocs7PageTree(config, list, locale));
+      assert.deepEqual(fallback?.children, list.filter((page) => page.path.endsWith('compatibility.mdx')).map(toNode));
     }
-    // The `dir` parser drops the language folder from `$ref`; docs.json keeps it (`en/index`).
+    // The `dir` parser drops the language folder from `$ref`; docs.json keeps it (`en/about`).
     const stripped = enPages.map((page) => ({ ...page, path: page.path.slice('en/'.length) }));
-    assert.equal(run('en', generated(stripped)).children.length, 4);
+    const about = run('en', generated(stripped)).children[1];
+    assert.deepEqual(about, { type: 'page', $id: 'docs7:en/about', $ref: 'about.mdx', name: 'Profile', url: '/en/about' });
+    // Fumadocs' own fallback tree runs the same transformers; it is left as built.
+    const own: Root = { name: 'Fallback', children: [] };
+    assert.equal(run('en', own, { generateFallback: false, idPrefix: 'fallback:en' }), own);
   });
 
-  it('matches nested pages only by their full path', () => {
+  it('matches navigation entries by their full path, once each', () => {
+    const tree = (list: typeof pages, entries: string[], locale?: string) => createDocs7PageTree(parseDocs7Config({
+      ...config, navigation: { languages: [
+        { language: 'ja', default: true, pages: locale ? ['index'] : entries },
+        { language: 'en', pages: locale ? entries : ['en/index'] },
+      ] },
+    }), list, locale);
     const nested = [...pages, { path: 'guides/setup.mdx', url: '/guides/setup', data: { title: 'Setup' } }];
-    const tree = (pagePath: string) => createDocs7PageTree(parseDocs7Config({
-      ...config, navigation: { pages: [pagePath] },
-    }), nested);
-    assert.equal(tree('guides/setup').children[0]?.type, 'page');
-    assert.throws(() => tree('setup'), /not found/);
+    assert.equal(tree(nested, ['guides/setup']).children[0]?.type, 'page');
+    assert.throws(() => tree(nested, ['setup']), /not found/);
+    // Non-default languages keep their folder, as Docs7 requires.
+    assert.throws(() => tree(enPages, ['about'], 'en'), /must start with en\//);
+    assert.throws(() => tree(enPages, ['en/about', 'en/about'], 'en'), /Duplicate/);
+    // Two source files resolving to one entry would make the link ambiguous.
+    assert.throws(() => tree([...enPages, { ...enPages[1]!, path: 'about.mdx' }], ['en/about'], 'en'), /both resolve to about/);
   });
 });
 

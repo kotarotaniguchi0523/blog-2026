@@ -207,8 +207,14 @@ provenance の記録はない。CLI のソースはダウンロード時の SHA-
 
 - `parser: "dir"` の英語ツリーでは、ノードの `$ref` が言語ディレクトリを除いた `index.mdx` になる。
   照合は両側から拡張子とその言語のディレクトリ（`en/`）を除いた完全なパスで行う（`setup` が `guides/setup` に一致しない）。
-- Fumadocs はメインのツリーに含まれないページ用のフォールバックツリーを同じ変換で生成する。
-  docs.json がサイドバーの全体なので、`configureLoader()` で `pageTree.generateFallback: false` を指定して生成しない。
+  既定言語以外の docs.json の値は `en/` から始まらなければ例外（Docs7 の仕様に合わせる）。
+  同じページを指す重複指定と、同じパスに解決される2つのソースも例外にする。
+- docs.json に載っていないページは、差し替えたツリーの `fallback` に残す。Fumadocs UI は `fallback` から
+  現在ページのサイドバー範囲と前後ページを探すため（`fumadocs-ui/dist/contexts/tree.js`）。
+- Fumadocs は変換後に独自の `fallback`（生成ツリーが使わなかったページ）を代入して上書きするため、
+  `configureLoader()` で `pageTree.generateFallback: false` を返す。ただし Fumapress core は `createPress()` が
+  同じキーを設定すると、プラグインの値を黙って無視する。その場合に備え、変換は Fumadocs 独自の
+  フォールバック（`generateFallback: false` かつ `idPrefix` が `fallback`）をそのまま返す。
 - Fumapress 2 は Node.js 24 以上が必要（`package.json` の `engines` と `.node-version` は既に 24 系）。
   `fumadocs-core` / Base UI 版 `fumadocs-ui` 16.18.3 以上、`fumadocs-mdx` 15.5.3 以上、React 19.3.1 以上、Vite 8.3.6 以上。
 - 既定プリセット（sitemap / robots / llms.txt / RSS / FlexSearch / Takumi OG 画像）は 1.x と同様に有効のまま。
