@@ -19,11 +19,11 @@
       {
         "language": "ja",
         "default": true,
-        "pages": ["index", "about", "blog", "scraps"]
+        "pages": ["index", "about", "blog/index", "scraps/index"]
       },
       {
         "language": "en",
-        "pages": ["en/index", "en/about", "en/blog", "en/scraps"]
+        "pages": ["en/index", "en/about", "en/blog/index", "en/scraps/index"]
       }
     ]
   }

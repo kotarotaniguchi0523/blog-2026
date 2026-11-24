@@ -17,8 +17,8 @@ const pages = [
   { path: 'index.mdx', url: '/', data: { title: 'Home' } },
   { path: 'about.mdx', url: '/about', data: { title: 'Profile' } },
   { path: 'compatibility.mdx', url: '/compatibility', data: { title: 'Compatibility' } },
-  { path: 'blog.mdx', url: '/blog', data: { title: 'Blog' } },
-  { path: 'scraps.mdx', url: '/scraps', data: { title: 'Scrap' } },
+  { path: 'blog/index.mdx', url: '/blog', data: { title: 'Blog' } },
+  { path: 'scraps/index.mdx', url: '/scraps', data: { title: 'Scrap' } },
 ];
 // Translations keep their language folder in the source path, like Docs7 does.
 const enPages = pages.map((page) => ({

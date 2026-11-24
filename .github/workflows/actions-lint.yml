@@ -1,0 +1,49 @@
+name: Actions lint
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/**
+      - .github/jactionlint.yaml
+      - .github/sisakulint.yaml
+      - .github/dependabot.yml
+      - mise.toml
+      - scripts/lint-actions.sh
+  workflow_dispatch:
+
+# Default-deny. Every actual scope is granted per job below.
+permissions: {}
+
+concurrency:
+  group: actions-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint GitHub Actions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # Read the workflows and configuration to lint.
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        timeout-minutes: 10
+        with:
+          cache: true
+          install: true
+
+      - name: Lint
+        shell: bash
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINT_ACTIONS_ONLINE: '1'
+        run: bash scripts/lint-actions.sh

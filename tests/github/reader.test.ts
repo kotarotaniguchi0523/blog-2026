@@ -2,7 +2,36 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { createEmulator, defineEmulator, type Emulator } from 'emulate';
 import { createGitHubReader } from '../../src/github/reader.ts';
+import {
+  buildScrapSnapshot,
+  parseCommentCandidate,
+  parsePublicationPolicy,
+  parseReactionSource,
+} from '../../src/scrap/publication.ts';
+import { parseCommentSource, parseIssueSource } from '../../src/scrap/schema.ts';
+import { createGraphqlEmulator } from './graphql-emulator.ts';
 import { createReactionsEmulator, reaction } from './reactions-emulator.ts';
+
+describe('GitHub reader options', () => {
+  it('rejects empty or path-like owner and repo names before making a request', () => {
+    const cases = [
+      ['', 'blog'],
+      ['owner', ''],
+      ['.', 'blog'],
+      ['..', 'blog'],
+      ['owner/repo', 'blog'],
+      ['owner', 'blog?x=1'],
+      ['owner name', 'blog'],
+    ] as const;
+    for (const [owner, repo] of cases) {
+      assert.throws(() => createGitHubReader({ owner, repo }), { name: 'TypeError' });
+    }
+    assert.throws(
+      () => createGitHubReader({ owner: undefined as unknown as string, repo: 'blog' }),
+      { name: 'TypeError' },
+    );
+  });
+});
 
 describe('GitHub reads against emulate built-in GitHub', () => {
   let github: Emulator;
@@ -60,6 +89,35 @@ describe('GitHub reads against emulate built-in GitHub', () => {
     assert.equal(closed[0]?.node_id, issue.node_id);
     await api(`/repos/admin/blog/issues/${issue.number}`, 'PATCH', { state: 'open' });
     assert.equal((await reader.getIssue(issue.number)).state, 'open');
+  });
+
+  it('parses reader output through the Scrap boundary schemas', async () => {
+    const created = await createIssue('Boundary scrap');
+    const response = await api(`/repos/admin/blog/issues/${created.number}/comments`, 'POST', { body: 'Approved text' });
+    const createdComment = await response.json() as { id: number; created_at: string };
+
+    const rawIssue = await reader.getIssue(created.number);
+    const issue = parseIssueSource(rawIssue);
+    assert.equal(issue.node_id, created.node_id);
+    assert.equal(issue.number, created.number);
+    assert.equal(issue.state, 'open');
+    assert.equal(issue.body, 'Source text');
+    assert.equal(issue.user?.login, 'admin');
+    assert.equal(issue.user?.id, rawIssue.user?.id);
+    assert.equal(typeof issue.user?.id, 'number');
+    assert.equal(issue.created_at, rawIssue.created_at);
+    assert.match(issue.created_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/);
+
+    const [rawComment] = await reader.listComments(created.number);
+    assert.ok(rawComment);
+    const comment = parseCommentSource(rawComment);
+    assert.equal(comment.id, createdComment.id);
+    assert.equal(comment.body, 'Approved text');
+    assert.equal(comment.user?.login, 'admin');
+    assert.equal(comment.user?.id, rawComment.user?.id);
+    assert.equal(typeof comment.user?.id, 'number');
+    assert.equal(comment.created_at, createdComment.created_at);
+    assert.match(comment.created_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/);
   });
 
   it('reads all comments across pages and observes edits and deletion', async () => {
@@ -130,6 +188,48 @@ describe('GitHub reactions against a test-owned emulate custom API', () => {
       const reader = createGitHubReader({ owner: 'owner', repo: 'blog', token: 'local-test-token', baseUrl: github.url });
       await assert.rejects(reader.listIssueReactions(1), { status: 403 });
     } finally { await github.close(); }
+  });
+});
+
+describe('GitHub GraphQL Scrap thread', () => {
+  it('batches comments and reactions by page instead of one request per comment', async () => {
+    const github = await createGraphqlEmulator();
+    try {
+      const reader = createGitHubReader({
+        owner: 'owner',
+        repo: 'blog',
+        token: 'local-test-token',
+        baseUrl: github.url,
+      });
+      const thread = await reader.getScrapThread(1);
+
+      assert.equal(thread.issue.node_id, 'I_graphql_issue1');
+      assert.equal(thread.issue.user?.login, 'owner');
+      assert.deepEqual(
+        thread.issueReactions.map((item) => item.content),
+        ['rocket', 'heart', 'eyes'],
+      );
+      assert.deepEqual(thread.comments.map((item) => item.comment.id), [10, 20, 30]);
+      assert.equal(github.snapshot().state.requests, 3);
+
+      const policy = parsePublicationPolicy({ ownerId: 1 });
+      const snapshot = buildScrapSnapshot({
+        issue: parseIssueSource(thread.issue),
+        issueReactions: thread.issueReactions.map(parseReactionSource),
+        comments: thread.comments.map(({ comment, reactions }) => parseCommentCandidate({
+          comment,
+          reactions: reactions.map(parseReactionSource),
+        })),
+      }, policy);
+      assert.ok(snapshot);
+      assert.equal(snapshot.title, 'GraphQL scrap');
+      assert.deepEqual(snapshot.comments.map((comment) => comment.id), [
+        'IC_graphql_comment10',
+        'IC_graphql_comment30',
+      ]);
+    } finally {
+      await github.close();
+    }
   });
 });
 

@@ -1,0 +1,52 @@
+name: Content checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Default-deny. Every actual scope is granted per job below.
+permissions: {}
+
+concurrency:
+  group: content-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Draft gate and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      # Read the content, sources, and tests.
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        timeout-minutes: 5
+        with:
+          version: 12.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        timeout-minutes: 5
+        with:
+          node-version-file: .node-version
+
+      - name: Install dependencies
+        shell: bash
+        timeout-minutes: 10
+        run: pnpm install --frozen-lockfile
+
+      - name: Check drafts, indexes, tests, types, and build
+        shell: bash
+        timeout-minutes: 15
+        run: pnpm content:check

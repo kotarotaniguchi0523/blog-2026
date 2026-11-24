@@ -8,6 +8,24 @@
 - **コンテンツ**: リポジトリ内の MDX ファイルを基本とし、将来的には GitHub Issues もコンテンツの入力として取り込む予定です。
 - **ホスティング**: Docs7(Upstash / Context7)を想定しています。Docs7 は Mintlify 互換で、`content/docs.json` と MDX を読み取り、`pnpm docs7:dev` でポート 3333 上に起動します。デプロイは `main` ブランチから行い、各プルリクエストにはプレビューが作成されます。
 
+## 公開ルール（必須）
+
+このリポジトリでは、公開操作に必ず人間の明示的な許可を必要とする。
+
+- エージェントは `status: draft` のページ作成、ローカルプレビュー、変更の提案までを行う。
+- `status: published` への変更、`main` への push、Docs7 の本番デプロイは、人間の許可を得てから行う。
+  許可を求めるときは、対象ページ、`git diff`、プレビューで確認した URL を示す。
+- 公開前チェックとして `pnpm content:check` を必ず実行する。Docs7 の ignore、Blog 一覧、
+  テスト、型検査、ビルドをまとめて検証する。CI でも同じコマンドを実行する。
+- `main` への変更は、`Content checks` が成功した PR を人間が承認してからマージする。
+  GitHub のブランチ保護でこのチェックを必須にする（設定はリポジトリ管理者が行う）。
+- Scrap の公開は、リポジトリオーナーが GitHub Issue に公開リアクション（既定 `rocket`）を
+  付けた場合だけ行われる。エージェントはリアクションを追加せず、`SCRAP_OWNER_ID` も変更しない。
+  承認リアクションに基づく Scrap 同期の自動 push は、この許可の例外とする。
+- `draft` は Fumapress のビルドに含まれず、Docs7 でも `content/.docs7ignore` により
+  アップロードされない。ただし ignore が古いまま push すると Docs7 は draft を配信する（確認済み）。
+  そのため `.docs7ignore` の再生成漏れはテストと CI で落とす。
+
 ### Mintlify / Docs7 連携について
 
 `@fumapress/mintlify` は実装の参考資料として扱い、**Docs7 向けの連携を独自に実装します**。同パッケージの採用を前提にしません。Docs7 と Fumapress の公開仕様、型定義、ソースを確認し、対応できる設定と MDX コンポーネントを明示してください。API や設定キーは推測しないでください。
@@ -20,8 +38,8 @@
 | --- | --- | --- |
 | `/` | `/en` | 名前・所属・GitHub アイコンだけの入口 |
 | `/about` | `/en/about` | 技術スタック（アイコンのみのグリッド）とポートフォリオ／発表物 |
-| `/blog` | `/en/blog` | 空の一覧 |
-| `/scraps` | `/en/scraps` | 空の一覧（GitHub 同期は未実装） |
+| `/blog` | `/en/blog` | 記事一覧（`content/blog/*.mdx` から生成） |
+| `/scraps` | `/en/scraps` | スレッド一覧（GitHub Issue の同期で生成） |
 
 - 見た目は `content/style.css` の `.merino-home`（トップ）と `.merino-profile`（プロフィール）で完結させる。
   CSS は Docs7 が `content/style.css` を優先して読み、Fumapress は `src/app.css` から同じファイルを import する。
@@ -97,10 +115,38 @@ Docs7 の挙動として確認済みの制約:
 - Docs7 は言語ごとの navbar を切り替えられない（確認済み）。そのためグローバルな
   `navbar.links` は使わず、Blog / Scrap を含む全ページをサイドバーの `pages` に列挙する。
 
-## 計画中のカスタム機能: Zenn「Scrap」風スレッド
+## 公開状態（frontmatter `status`）
 
-Zenn の Scrap のようなスレッド機能を検討しています。**まだ実装していません。**
-`/scraps` と `/en/scraps` は空の一覧ページとして公開済みで、同期処理・UI は未着手です。
+- 各ページの frontmatter は `status: published` のときだけ公開する。指定がなければ `draft`
+  （`src/content/publication.ts` の `pageStatusSchema` が既定値）。`published` 以外の値は検証エラー。
+- Astro / Fumapress は `src/content.config.ts` の `publishedOnly(pageLoader())` が `draft` を
+  コレクションから落とすため、`draft` のページはルートにもページツリーにも現れない。
+- Docs7 のアップロード対象は `content/.docs7ignore` で決まる。`pnpm docs7:ignore` が
+  `status` を見てこのファイルを生成する。`status` を切り替えたら実行し、生成物も同じ変更で
+  コミットする。`pnpm docs7:ignore --check` は書き込みなしで差分だけを検査する。
+- Docs7 はアップロードされた MDX を frontmatter の `status` では判定しない。ignore が古いまま
+  push すると、`draft` でも配信される（Docs7 レンダラー 0.1.61 のローカルプレビューで確認済み）。
+  再生成漏れは `pnpm content:check` と CI で落とす。
+- `draft` のページを `content/docs.json` のナビゲーションに書かない。Docs7 のナビゲーションは
+  公開判定ではなく、`draft` はアップロードされないため 404 になる（Fumapress のビルドも
+  `Navigation page not found` で失敗する）。`tests/content/docs7-ignore.test.ts` が
+  ignore ファイルのずれとナビゲーション参照を検出する。
+
+## Blog 記事（`content/blog/`）
+
+- 記事は `content/blog/<slug>.mdx`、英語は `content/en/blog/<slug>.mdx` に置く。 slug は
+  `[A-Za-z0-9_-]+` に限り、ファイル名がそのまま `/blog/<slug>` の URL になる。
+  サブディレクトリは使わない（1 ファイル = 1 ページ）。
+- frontmatter は `title`（必須）、`description`、`date`（`YYYY-MM-DD`）、`status`。
+  `status: published` の記事だけが一覧に載る。
+- 一覧 `content/blog/index.mdx` / `content/en/blog/index.mdx` は `pnpm blog:index` の生成物。記事を追加・改名・
+  削除したら実行する。`pnpm blog:index --check` は書き込みなしで再生成漏れを検査する。
+- `tests/blog/index.test.ts` が、コミット済みの一覧と `content/blog/` の内容のずれを検出する。
+
+## カスタム機能: Zenn「Scrap」風スレッド
+
+Zenn の Scrap のようなスレッド機能を実装しています。公開判定・入力検証（`src/scrap/publication.ts` / `src/scrap/schema.ts`）、GitHub 取得、同期ジョブ、生成 MDX の一覧・個別ページまで実装済みです。相対時刻の自動更新や検索はまだありません。
+`/scraps` と `/en/scraps` は同期結果を表示する一覧ページで、`/scraps/<node_id>` に個別スレッドを生成します。
 
 ### スケッチ
 
@@ -135,26 +181,41 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 - 利用者の要件: GitHub 上で公開用リアクションを付けると、非同期でブログへ反映する。
 - GitHub のリアクションに独自の `Post` は追加できないため、既存の 🚀 (`rocket`) を公開操作に割り当てる案とする。
 - GitHub にリアクション追加の Webhook / Actions トリガーはない。リアクションは API で定期取得して検出する。Issue / コメントの編集イベントだけでリアクション変更を検出できるとは扱わない。
-- 公開操作を認めるアカウントを明示的に設定し、それ以外の利用者のリアクションでは公開しない。
+- 公開操作はリポジトリオーナーの GitHub ユーザー ID と一致するリアクションのみに限定し、それ以外の利用者（Issue 作成者を含む）のリアクションでは公開しない。
 - Issue 本文とコメントのどこに付けたリアクションをどの範囲へ適用するかは、下記の実装案を出発点にする。確定済み要件と混同しない。
 - 自動ラベル付けの案: Scrap 専用 Issue テンプレートで `labels: [scrap]` を指定する。ラベルはリポジトリに事前作成が必要。通常の Issue は一括で Scrap にしない。
-- テンプレート外の既存 Issue も、許可アカウントの公開用リアクションを検出した際に `scrap` ラベルを付けて取り込める設計とする。
+- テンプレート外の既存 Issue も、リポジトリオーナーの公開用リアクションを検出した際に `scrap` ラベルを付けて取り込める設計とする。
 
-### 非同期公開の実装案（未実装）
+### 公開判定（実装済み）
+
+- `src/scrap/schema.ts` の `parsePublicationPolicy` が設定を検証し、`src/scrap/publication.ts` の `buildScrapSnapshot` が検証済みの Issue・コメント・リアクションから公開スナップショットを作る。I/O・時計・環境変数には触れない。
+- GitHub の応答は `src/scrap/schema.ts` で Valibot により検証する。Octokit の型で緩い `body` の省略（Issue は `null`、コメントは必須）、`state` の任意文字列、コメント ID の `number | bigint` を境界で正規化し、未知のフィールドは落とす。検証失敗は `ValiError` にして、未承認の素材を公開しない。
+- `ScrapId` / `CommentId` / `GitHubLogin` / `GitHubUserId` / `IsoTimestamp` は実行時の `unique symbol` を使ったブランド型。`ContentHash` も出力専用のブランド型で、ID・ログイン・時刻・ハッシュの取り違えをコンパイル時に防ぐ。
+- `state` は `open` / `closed` に限定し、数値 ID は安全な整数へ正規化する。`parsePublicationPolicy` はオーナーを不変の GitHub ユーザー ID (`ownerId`) として検証する。設定オブジェクトの未知キーは例外にし、`reaction` の typo や古い `owner` / `approvers` 設定で権限を広げられないようにする。公開リアクションの設定は GitHub の8種類に限定する。リアクション応答の `content` は将来の追加に備えて任意の非空文字列を許し、承認判定に一致しなければ無視する。
+- 既定の公開リアクションは `rocket`。オーナーは `parsePublicationPolicy` に渡す `ownerId` で決め、比較は不変のユーザー ID で行う。ログインは変更・再利用され得るため認可には使わない。`ownerId` はリポジトリ所有者の GitHub ユーザー ID と一致させる。
+- Issue の承認リアクションがスレッド全体の前提。コメントは個別の承認リアクションが必要で、未承認コメントはスナップショットに含めない。
+- Close は非公開にしない。`state: 'closed'` のまま公開を続ける。
+- 現在のリアクション状態をそのまま反映する。承認リアクションを外すと次回のスナップショットから消える（現時点の既定）。Issue タイトル・本文、承認済みコメント本文の編集は次回同期でそのまま反映し、再承認は要求しない（確定）。
+- `contentHash` は公開内容（Issue の id・title・body・state・author と、公開コメントの id・body・author）だけから計算する。タイムスタンプや、公開対象を変えないリアクション、`issueNumber` は含めない。
+- 公開 URL の識別子には `issue.node_id` を使う。Docs7 はファイルパスをそのまま URL にするため、`^[A-Za-z0-9_-]+$` を検証したうえで `encodeURIComponent` した値を URL とファイル名の両方に使う。検証に失敗する ID は同期を失敗させる。`issueNumber` は API 用にスナップショットへ残すが、URL には使わない。
+
+### 非同期公開（実装済み）
 
 - Issue 本文の 🚀 をスレッドと本文の公開操作、各コメントの 🚀 をそのコメントの公開操作とする。未承認コメントはブログに含めない。親スレッド未公開時はコメントも公開しない。
-- 定期同期で対象 Issue とリアクションをページネーション付きで取得し、許可アカウントを確認して、公開スナップショットを生成する。
-- 再実行しても重複しないよう Issue / コメントの ID と内容ハッシュを管理する。失敗時は前回の公開データを保持し、次回再試行する。
-- 初期案は GitHub Actions の定期実行（例: 5 分間隔）と手動実行。実行遅延があり、公開までの時間は保証しない。より短い遅延が必要なら別の定期ジョブ基盤を検討する。
-- Issue の closed / reopened、本文・コメントの編集と削除も同期対象。公開後の編集を自動反映するか、再承認を要求するか、リアクション削除で公開を取り下げるかは実装前に決める。
-- 同期結果から Docs7 向けのファイルを生成する方法と、公開環境への更新方法は Docs7 の実際の仕様を確認して決める。Docs7 が任意の React サーバーを実行できるとは仮定しない。
+- `src/scrap/sync.ts` が `listIssues` → `getScrapThread` → `buildScrapSnapshot` の順に処理し、公開されたスレッドだけを MDX に書き出す。出力は `content/scraps/index.mdx` / `content/en/scraps/index.mdx` と各 `content/scraps/<node_id>.mdx` / `content/en/scraps/<node_id>.mdx`。
+- 出力は決定的に生成し、変更のあるファイルだけを書き換える。`contentHash` はスナップショットに含まれるが、保存状態は git の差分で管理する。生成マーカーのある古いページは削除する。失敗時は書き込まず、前回の公開データを保持して次回再試行する。
+- `src/github/reader.ts` の `getScrapThread` が GraphQL で Issue・コメント・リアクションをページ単位にまとめる。コメントごとの REST リアクション取得は通常経路で行わない。
+- リアクションには Webhook イベントがないため、承認検出は定期同期を必須とする。コメント投稿・編集の Webhook / GitHub Actions イベントは本文の即時反映には使えるが、承認検出の代替にはならない。
+- `.github/workflows/scrap-sync.yml` が毎日 18:00 JST（09:00 UTC）に実行する。Actions の `Run workflow`（`workflow_dispatch`）から手動でも実行できる。実行遅延があり、公開までの時間は保証しない。
+- Issue の closed / reopened、本文・コメントの編集と削除も同期対象。編集は次回同期で自動反映し、再承認は要求しない（確定）。リアクション削除による取り下げは現時点の既定。
+- 同期結果は main へ push し、Docs7 の既存の GitHub 連携でデプロイする。Docs7 は任意の React サーバーを実行しない。個別ページは `content/docs.json` のナビゲーションに追加しない。Docs7 がナビゲーション外の MDX もパスで配信することはローカルプレビューで確認済み。
 
 ### 未解決の質問
 
-- 公開リアクションの確定、許可アカウント、本文とコメントの公開単位、編集の再承認・公開取り下げの方針
-- 非同期ジョブの実行基盤、許容遅延、公開データの保存場所と Docs7 の更新方法
-- GitHub API のレート制限・認証(トークン)の扱い
-- オーナー判定をどう定義するか(リポジトリ所有者?コメント毎の区分は?)
+- 公開リアクション（既定 `rocket`）とオーナーの `ownerId` は `parsePublicationPolicy` の設定として実装済み。公開単位は Issue 本文とコメント単位に固定し、コメントは個別承認を要求する。編集は承認継続で確定。リアクション削除で次回非公開、は現時点の既定。
+- 日次 18:00 JST の反映遅延で足りるか（より短い間隔や手動実行の運用が必要か）
+- GitHub API のレート制限・認証(トークン)の扱い。同期失敗時の再試行とバックオフ
+- Organization 所有リポジトリで、公開を許可する管理者1名の GitHub ユーザー ID を `ownerId` にするか（Organization 自身はリアクションできないため、管理者ユーザーを明示する必要がある）
 - 相対時刻の更新戦略(SSR での初回表示とクライアントでの更新)
 
 ## 開発ルール
@@ -180,8 +241,30 @@ Zenn の Scrap のようなスレッド機能を検討しています。**まだ
 | 静的ビルド（`dist/`） | `pnpm build` |
 | ビルド結果の確認 | `pnpm preview` |
 | テスト | `pnpm test` |
+| 公開前チェック（ignore・Blog 一覧・テスト・型・ビルド） | `pnpm content:check` |
 | 型検査 | `pnpm types:check` |
+| Docs7 の ignore ファイル生成（`--check` で差分のみ） | `pnpm docs7:ignore` |
 | 未使用検出 | `pnpm knip` |
+| GitHub Actions の lint | `pnpm lint:actions` |
+| Blog 一覧の生成（`--check` で差分のみ） | `pnpm blog:index` |
+| Scrap の手動同期（`--dry-run` で書き込みなし） | `pnpm scrap:sync` |
+
+### Scrap の定期同期
+
+- `.github/workflows/scrap-sync.yml` が毎日 18:00 JST（09:00 UTC）に実行する。Actions の
+  `Run workflow`（`workflow_dispatch`）から手動でも実行できる。
+- `SCRAP_OWNER_ID` はリポジトリの **Variables** に置く。値は公開を許可する GitHub ユーザーの
+  不変 ID（このリポジトリなら `kotarotaniguchi0523` の `119092698`）。
+- 生成物は `content/scraps/index.mdx` / `content/en/scraps/index.mdx` と、公開された各スレッドの
+  `content/scraps/<node_id>.mdx` / `content/en/scraps/<node_id>.mdx`。個別ページは
+  `content/docs.json` のナビゲーションに追加しない。Docs7 はナビゲーション外の MDX も
+  パスで配信することをローカルプレビューで確認済み。
+- 権限は job 単位で付与する。ワークフロー直下の `permissions: {}` は default-deny のためだけに
+  置き、`contents: write` / `issues: read` などの実権限は job に置く。
+- GitHub Actions の lint は `mise install` で入る jactionlint / sisakulint / shellcheck を使う。
+  `pnpm lint:actions` は jactionlint の pedantic + strict-exit と sisakulint を実行し、
+  オンライン検査は `LINT_ACTIONS_ONLINE=1` で有効になる。CI は
+  `.github/workflows/actions-lint.yml`。
 
 ### Windows バインドマウント(SBX)制約
 

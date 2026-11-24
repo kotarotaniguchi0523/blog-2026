@@ -17,7 +17,9 @@
 - `content/en/*.mdx`: 英語のページ。日本語と同じファイル名で対応させる
 - `content/style.css`: トップのアイコンリンクと、技術スタック・作品カードの共通スタイル
 - 公開ページはトップ、プロフィール、Blog一覧、Scrap一覧の4ページ × 2言語。
-  Blog / Scrap は空の状態を表示。記事や GitHub 同期機能は未実装。確認用ページは削除済み。
+  Blog は `content/blog/` の記事を一覧に表示し、`/blog/<slug>` に記事ページを生成する
+  （一覧は `pnpm blog:index` の生成物）。Scrap は GitHub Issue の同期結果を一覧に表示し、
+  個別スレッドを `/scraps/<node_id>` に生成する。確認用ページは削除済み。
 
 Fumapress は `press.config.tsx` の `docs7Plugin(config)` と、`astro.config.mjs` の
 `press({ components: "./src/plugins/docs7/mdx.ts" })` を通して読む。
@@ -68,6 +70,7 @@ Fumapress の開発サーバーは `content/docs.json` の変更で再起動す�
 存在しないページ、重複参照、ルート外のパスはエラーになる。
 ナビゲーションは表示順の設定であり、アクセス制御ではない。
 ナビゲーション外の MDX が非公開になるとは扱わない。
+公開の可否は `content/.docs7ignore` で決める（後述「公開ゲート」）。
 
 ナビゲーションは `groups`（セクション見出し付き）、`pages`（見出しなしの一覧）、
 `languages`（言語ごとの一覧）に対応する。`languages` では `default: true` を1つだけ指定する。
@@ -151,6 +154,28 @@ This site now deploys from GitHub. Push to the connected repository to deploy it
 `docs7:preview` は外部にサイトを作る操作。ローカルの動作確認では実行しない。
 `.docs7/project.json` は CLI がサイトを作成・リンクしたときの記録であり、
 GitHub 連携の設定を代替しない。必要なローカル記録を CLI が作るため、手書きしない。
+
+## 公開ゲート（`content/.docs7ignore`）
+
+2026-11-23 確認。Docs7 のアップロード対象は `content/.docs7ignore` で決まる。Docs7 はドキュメント
+ルート（= `content/`）の `.docs7ignore` と `.mintignore` を `ignore` パッケージの gitignore 構文として
+読み、一致するパスをアーカイブから外す。dotfile は原則として除外されるが、`.docs7ignore` /
+`.mintignore` / `.gitignore` はアップロード対象に残る（`@upstash/docs7@0.1.12` の
+`src/source-archive.mjs` で確認）。
+
+- 公開判定は MDX の frontmatter `status`。`published` 以外（未指定を含む）は `draft`。
+- `pnpm docs7:ignore`（`scripts/docs7-ignore.ts`）が `content/**/*.mdx` の frontmatter を読み、
+  `draft` のパスをソートして `content/.docs7ignore` を生成する。手で編集せず、`status` を
+  変えたら同じ変更で生成し直してコミットする。
+- `pnpm docs7:ignore --check` は書き込まずに差分を表示して終了コード 1 を返す。
+  `tests/content/docs7-ignore.test.ts` がコミット済みファイルと実コンテンツの一致を検証する。
+- Docs7 のナビゲーション（`docs.json`）は公開判定ではない。ナビゲーション外の MDX もパスで
+  配信されるため、「ナビゲーションに無いから非公開」とは扱わない。逆に `draft` のページを
+  ナビゲーションに書くと、アップロードされない 404 ページになる。生成スクリプトはその参照を
+  エラーにし、Fumapress のビルドも `Navigation page not found` で失敗する。
+- Fumapress / Astro 側は `src/content/publication.ts` の `publishedOnly()` がローダーの
+  データストアを包み、`draft` のエントリを捨てる。ローカルのビルドとページツリーに `draft` は
+  現れない（`pnpm build` で確認）。
 
 ## 検証と制約
 

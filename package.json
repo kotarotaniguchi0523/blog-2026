@@ -9,7 +9,12 @@
   "sideEffects": false,
   "scripts": {
     "knip": "node node_modules/knip/bin/knip.js",
-    "test": "node --test tests/github/*.test.ts tests/docs7/*.test.ts",
+    "lint:actions": "bash scripts/lint-actions.sh",
+    "scrap:sync": "node src/scrap/sync.ts",
+    "blog:index": "node scripts/blog-index.ts",
+    "docs7:ignore": "node scripts/docs7-ignore.ts",
+    "content:check": "pnpm docs7:ignore --check && pnpm blog:index --check && pnpm test && pnpm types:check && pnpm build",
+    "test": "node --test tests/blog/*.test.ts tests/github/*.test.ts tests/docs7/*.test.ts tests/scrap/*.test.ts tests/content/*.test.ts",
     "docs7:dev": "node --env-file=docs7.env node_modules/@upstash/docs7/bin/docs7.mjs dev content --port 3333",
     "docs7:whoami": "node node_modules/@upstash/docs7/bin/docs7.mjs whoami",
     "docs7:login": "node node_modules/@upstash/docs7/bin/docs7.mjs login --no-browser",
@@ -32,6 +37,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "takumi-js": "^2.20.0",
+    "valibot": "1.5.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

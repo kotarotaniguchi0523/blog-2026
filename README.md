@@ -2,6 +2,23 @@
 
 個人ブログです。[Fumapress](https://press.fumadocs.dev)(Fumadocs ベースのコンテンツフレームワーク)を Astro 上で動かして構築しています。ホスティングは Docs7(Upstash / Context7、Mintlify 互換)を想定しています。
 
+## 公開ルール（人間の許可が必須）
+
+公開は、`status: published` にしたうえで人間の許可を得てから行います。エージェントは下書きの作成とローカルプレビューまでです。
+
+- `status: published` への変更、`main` への push、Docs7 の本番デプロイには、人間の明示的な許可が必要です。
+- 公開前に次を実行し、すべて通ることを確認します。CI でも同じコマンドを実行します。
+
+```sh
+pnpm content:check
+```
+
+- `main` へは、`Content checks` が成功した PR を人間が承認してからマージします。ブランチ保護でこのチェックを必須にします。
+
+- Scrap は、リポジトリオーナーが GitHub Issue に 🚀 リアクションを付けたものだけを同期します。
+- `draft` は Fumapress のビルドに含まれず、Docs7 でも `content/.docs7ignore` によりアップロードされません。
+  ignore が古いと Docs7 は draft を配信するため、生成漏れはテストと CI が検出します。
+
 ## 必要なもの
 
 - Node.js 24以上（`.node-version` は動作確認した24.15.0）
@@ -74,7 +91,8 @@ Studio は別プロセスで起動し、サイトのコード・ビルド・Docs
 
 トップ (`/`) は名前と GitHub アイコンのみの入口、プロフィール (`/about`) に技術スタックと作品を置いています。
 Blog (`/blog`)・Scrap (`/scraps`) はサイドバーから移動できます。
-どちらも現在は記事・スレッドのない一覧ページです。Scrap の GitHub 同期は未実装です。
+Blog は `content/blog/` の記事、Scrap は GitHub Issue の同期結果を一覧にします。Scrap は公開判定・入力検証・GitHub 取得・
+同期ジョブ・生成 MDX の一覧と個別ページまで実装済みです。相対時刻の自動更新と検索はまだありません。
 
 ### 日本語と英語
 
@@ -85,6 +103,52 @@ Fumapress は `i18n`（`parser: "dir"`, `hideLocale: "default-locale"`）で同�
 ページの追加・並びは `content/docs.json` の `navigation.languages` に言語ごとに書きます。
 
 導入方法・Node 要件は [公式 Studio ドキュメント](https://editor.fumadocs.dev/studio) を参照。
+
+## 公開状態（frontmatter `status`）
+
+各ページの frontmatter は `status: published` のときだけ公開されます。指定がない場合は `draft` です。
+
+```md
+---
+title: 記事のタイトル
+status: published
+---
+```
+
+`draft` のページはローカルの Astro / Fumapress のビルドに含まれず（ルートもページツリーも作られません）、
+Docs7 のアップロード対象からも外れます。`content/.docs7ignore` が Docs7 にアップロードしないページの
+一覧で、`pnpm docs7:ignore` が `status` から生成します。状態を切り替えたらこのコマンドを実行し、
+生成された `content/.docs7ignore` も同じ変更でコミットしてください。`draft` のページは
+`content/docs.json` のナビゲーションに書かないでください（ビルドが失敗します）。
+
+```sh
+pnpm docs7:ignore
+pnpm docs7:ignore --check   # 書き込みなし。差分があれば終了コード 1
+```
+
+## Blog 記事
+
+記事は `content/blog/<slug>.mdx`、英語は `content/en/blog/<slug>.mdx` に置きます。
+slug は英数字・`_`・`-` に限り、ファイル名がそのまま `/blog/<slug>` の URL になります。
+サブディレクトリは使いません。
+
+```md
+---
+title: 記事のタイトル
+description: 記事ページの説明（meta description）
+date: 2026-11-01
+status: published
+---
+```
+
+一覧 `content/blog/index.mdx` / `content/en/blog/index.mdx` は記事から生成します。追加・改名・削除のあとに実行してください。
+
+```sh
+pnpm blog:index
+pnpm blog:index --check   # 書き込みなし。差分があれば終了コード 1
+```
+
+`tests/blog/index.test.ts` が、一覧の再生成忘れを検出します。
 
 ## リンク切れの検査
 
@@ -125,8 +189,10 @@ Fumapress が仮想モジュールから読む設定と CSS は `knip.jsonc` に
 
 ## GitHub API の取得・テスト
 
-GitHub の取得層は `@octokit/core` とページネーション用プラグインを使います。
+GitHub の取得層は `@octokit/core` とページネーション用プラグインを使います。Scrap のスレッド取得は
+GraphQL でコメントとリアクションをページ単位にまとめ、コメントごとの N+1 を避けます。
 テストには Vercel Labs の `emulate` を使い、実 GitHub のトークンなしで実行できます。
+GitHub の応答と Scrap の設定は Valibot で検証し、ID・時刻・ログイン・ハッシュはブランド型で区別します。
 
 ```sh
 pnpm test
@@ -134,17 +200,39 @@ pnpm test
 
 取得層の使い方、配布来歴の確認結果、エミュレーターの対応範囲は
 [GitHub 取得層と API エミュレーター](./docs/github-client-and-testing.md)を参照してください。
-Scrap の公開処理・UI はまだ未実装です。
+
+### Scrap の同期
+
+`.github/workflows/scrap-sync.yml` が毎日 18:00 JST に GitHub Issues を読み、公開承認された
+スレッドを `content/scraps/` と `content/en/scraps/` に書き出します。手動で実行する場合は
+Actions の **Run workflow**、または次のコマンドを使います。
+
+```sh
+GITHUB_REPOSITORY=owner/repo SCRAP_OWNER_ID=123 GITHUB_TOKEN=... pnpm scrap:sync
+pnpm scrap:sync --dry-run
+```
+
+`SCRAP_OWNER_ID` はリポジトリの Variables に設定してください。同期結果は main へ push され、
+Docs7 の既存の GitHub 連携でデプロイされます。個別スレッドは `content/docs.json` の
+ナビゲーションには追加せず、`/scraps/<node_id>` のパスで配信します。
+
+GitHub Actions の lint は jactionlint と sisakulint で行います。
+
+```sh
+mise install
+pnpm lint:actions
+```
 
 ## リポジトリ構成
 
 ```
 ├── content/          # 日本語の MDX（既定言語）
 │   ├── docs.json     # ナビゲーション・テーマ・言語設定
+│   ├── .docs7ignore  # Docs7 がアップロードしないページ（pnpm docs7:ignore の生成物）
 │   ├── index.mdx     # トップページ
 │   ├── about.mdx     # プロフィール(技術スタック・作品)
-│   ├── blog.mdx      # Blog 一覧
-│   ├── scraps.mdx    # Scrap 一覧
+│   ├── blog/         # Blog 一覧(index.mdx)と記事(1 ファイル = 1 ページ)
+│   ├── scraps/       # Scrap 一覧(index.mdx)と個別スレッド
 │   └── en/           # 英語（同じファイル名で対応させる）
 ├── src/              # アプリケーションソース(src/app.css など)
 ├── press.config.tsx  # Fumapress の設定
@@ -157,5 +245,5 @@ Scrap の公開処理・UI はまだ未実装です。
 
 ## ロードマップ
 
-- **Scrap 機能**: Zenn の「Scrap」のようなスレッド機能(GitHub Issue + コメントを時系列スレッドとして表示)。詳細は [AGENTS.md](./AGENTS.md) を参照。**未実装**。
+- **Scrap 機能**: Zenn の「Scrap」のようなスレッド機能(GitHub Issue + コメントを時系列スレッドとして表示)。毎日 18:00 JST の同期と手動実行に対応。詳細は [AGENTS.md](./AGENTS.md) を参照。
 - **Docs7 デプロイ**: https://merino-dev.docs7.io で本番公開。GitHub App を `blog-2026` に接続し、`main`・`content` からの自動デプロイを設定済み。
