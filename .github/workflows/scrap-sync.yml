@@ -1,0 +1,99 @@
+name: Scrap sync
+
+on:
+  schedule:
+    # 毎日 18:00 JST (09:00 UTC)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Generate without committing
+        type: boolean
+        default: false
+
+# Default-deny. Every actual scope is granted per job below.
+permissions: {}
+
+concurrency:
+  group: scrap-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync scraps from GitHub Issues
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # Push the generated MDX back to main.
+      contents: write
+      # Read issues, comments, and reactions.
+      issues: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        timeout-minutes: 5
+        with:
+          version: 12.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        timeout-minutes: 5
+        with:
+          node-version-file: .node-version
+
+      - name: Install dependencies
+        shell: bash
+        timeout-minutes: 10
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync (dry run)
+        if: ${{ inputs.dry_run == true }}
+        shell: bash
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRAP_OWNER_ID: ${{ vars.SCRAP_OWNER_ID }}
+        run: pnpm scrap:sync --dry-run
+
+      - name: Sync
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRAP_OWNER_ID: ${{ vars.SCRAP_OWNER_ID }}
+        run: pnpm scrap:sync
+
+      - name: Regenerate the Docs7 ignore file
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        timeout-minutes: 5
+        run: pnpm docs7:ignore
+
+      - name: Commit and push
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          changes="$(git status --porcelain -- content)"
+          if [[ -z "${changes}" ]]; then
+            echo "No scrap changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A content
+          git commit -m "chore(scrap): sync from GitHub Issues"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git pull --rebase origin main
+          git push origin HEAD:main

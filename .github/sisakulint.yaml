@@ -1,0 +1,14 @@
+# Strict allowlist for the actions used by this repository.
+# The commit-sha rule separately requires every action to be pinned to a SHA.
+action-list:
+  - actions/checkout@*
+  - pnpm/action-setup@*
+  - actions/setup-node@*
+  - jdx/mise-action@*
+config-variables:
+  - SCRAP_OWNER_ID
+secret-exfiltration:
+  allowed-hosts:
+    - github.com
+self-hosted-runner:
+  labels: []

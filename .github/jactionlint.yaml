@@ -1,0 +1,14 @@
+profile: pedantic
+platform: github
+assume-default-permissions: restricted
+config-variables:
+  - SCRAP_OWNER_ID
+config-secrets: []
+self-hosted-runner:
+  labels: []
+shellcheck:
+  enable:
+    - all
+rules:
+  timeout-too-long:
+    max: 15
